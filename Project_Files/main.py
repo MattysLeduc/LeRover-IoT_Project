@@ -12,7 +12,6 @@ from servo import Servo
 from buzzer import Buzzer
 from infrared import Infrared
 
-
 # -------------------------------
 # Load Configuration (from config.json)
 # -------------------------------
@@ -56,33 +55,54 @@ def send_data(feed, value):
 
 
 # -------------------------------
-# Movement Logic (3-second actions)
+# Movement Logic (with Obstacle Detection)
 # -------------------------------
+def check_obstacle(threshold=10.0):
+    """Check for nearby obstacle using ultrasonic sensor."""
+    try:
+        distance = ultrasonic.get_distance()
+        if distance < threshold:
+            print(f"Obstacle detected: {distance:.2f} cm")
+            buzzer.set_state(True)
+            car.set_motor_model(0, 0, 0, 0)
+            time.sleep(0.5)
+            buzzer.set_state(False)
+            return True
+        return False
+    except Exception as e:
+        print(f"Ultrasonic error: {e}")
+        return False
+
+
 def execute_movement(command):
     cmd = str(command).strip()
     print(f"Received command: {cmd}")
 
     # --- Arrow movement controls ---
     if cmd == "5":  # Up
-        print("Moving FORWARD for 3s")
+        print("Mode: Remote Control (Forward)")
         car.set_motor_model(-1000, -1000, -1000, -1000)
-        time.sleep(3)
+        for _ in range(30):  # ~3 seconds (0.1s * 30)
+            if check_obstacle():
+                print("Obstacle ahead - Stopping.")
+                break
+            time.sleep(0.1)
         car.set_motor_model(0, 0, 0, 0)
 
     elif cmd == "13":  # Down
-        print("Moving BACKWARD for 3s")
+        print("Mode: Remote Control (Backward)")
         car.set_motor_model(1000, 1000, 1000, 1000)
         time.sleep(3)
         car.set_motor_model(0, 0, 0, 0)
 
     elif cmd == "8":  # Left
-        print("Turning LEFT for 3s")
+        print("Mode: Remote Control (Left Turn)")
         car.set_motor_model(1500, 1500, -1000, -1000)
         time.sleep(3)
         car.set_motor_model(0, 0, 0, 0)
 
     elif cmd == "10":  # Right
-        print("Turning RIGHT for 3s")
+        print("Mode: Remote Control (Right Turn)")
         car.set_motor_model(-1000, -1000, 1500, 1500)
         time.sleep(3)
         car.set_motor_model(0, 0, 0, 0)
@@ -119,7 +139,7 @@ def execute_movement(command):
         print("Button 5 Camera snapshot")
         try:
             from picamera2 import Picamera2
-            import cv2, os
+            import cv2
             photo_dir = Path(__file__).parent / "captured_image"
             photo_dir.mkdir(exist_ok=True)
             picam2 = Picamera2()
@@ -166,7 +186,6 @@ def execute_movement(command):
             (0.1, 0.05),
             (0.3, 0.3),
         ]
-
         try:
             for on_time, off_time in melody_pattern:
                 buzzer.set_state(True)
@@ -179,12 +198,15 @@ def execute_movement(command):
             print("Melody interrupted by user")
 
     elif cmd == "26":  # Button 9
-        print("Button 9 Line-Follow Mode toggle")
+        print("Mode: Line-Following with Obstacle Avoidance")
         print("Press Ctrl+C to exit Line-Follow Mode.")
         ir = Infrared()
         try:
             while True:
                 mask = ir.read_all_infrared()
+                if check_obstacle():
+                    print("Obstacle detected - stopping in line-follow mode")
+                    continue
                 if mask in (0b00100, 0b01110, 0b11111):
                     car.set_motor_model(-800, -800, -800, -800)
                     print("FORWARD")
@@ -251,94 +273,15 @@ mqtt_thread.start()
 
 
 # -------------------------------
-# Local Console Menu (manual mode)
-# -------------------------------
-def main_menu():
-    print("\n==============================")
-    print("      FREEnove Car Control     ")
-    print("==============================")
-    print("1. Move Forward")
-    print("2. Move Backward")
-    print("3. Turn Left")
-    print("4. Turn Right")
-    print("5. Stop Car")
-    print("6. Activate Buzzer")
-    print("7. Read Ultrasonic Distance")
-    print("8. Infrared Test")
-    print("9. Line-Follow Mode")
-    print("0. Exit")
-    print("==============================")
-    return input("Enter your choice: ").strip()
-
-
-# -------------------------------
 # Main Program
 # -------------------------------
 def main():
     print("Initializing Freenove Robot Dashboard...")
     time.sleep(1)
+    print("Modes available: Remote Control, Line Follow, Obstacle Avoidance")
 
     while True:
-        choice = main_menu()
-
-        if choice == "1":
-            execute_movement("forward")
-        elif choice == "2":
-            execute_movement("backward")
-        elif choice == "3":
-            execute_movement("left")
-        elif choice == "4":
-            execute_movement("right")
-        elif choice == "5":
-            execute_movement("stop")
-
-        elif choice == "6":
-            print("Buzzer ON for 1 second")
-            buzzer.set_state(True)
-            time.sleep(1)
-            buzzer.set_state(False)
-
-        elif choice == "7":
-            distance = ultrasonic.get_distance()
-            print(f"Distance: {distance:.2f} cm")
-
-        elif choice == "8":
-            print("Infrared Sensor Test Mode")
-            try:
-                while True:
-                    mask = ir.read_all_infrared()
-                    binary = format(mask, "05b")
-                    print(f"Pattern: {binary}")
-                    time.sleep(0.2)
-            except KeyboardInterrupt:
-                print("Infrared test stopped.")
-                ir.close()
-
-        elif choice == "9":
-            print("Line-Following Mode")
-            try:
-                while True:
-                    mask = ir.read_all_infrared()
-                    if mask in (0b00100, 0b01110, 0b11111):
-                        execute_movement("forward")
-                    elif mask in (0b01100, 0b11000, 0b01000):
-                        execute_movement("left")
-                    elif mask in (0b00110, 0b00011, 0b00010):
-                        execute_movement("right")
-                    elif mask == 0b00000:
-                        execute_movement("stop")
-                    time.sleep(0.05)
-            except KeyboardInterrupt:
-                execute_movement("stop")
-                ir.close()
-
-        elif choice == "0":
-            print("Shutting down system...")
-            execute_movement("stop")
-            break
-        else:
-            print("Invalid choice.")
-        time.sleep(0.5)
+        time.sleep(1)
 
 
 # -------------------------------
@@ -348,7 +291,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        execute_movement("stop")
+        car.set_motor_model(0, 0, 0, 0)
         buzzer.set_state(False)
         print("\nProgram stopped safely.")
         client.disconnect()
