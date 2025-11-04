@@ -1,6 +1,6 @@
 # LeRover-IoT_Project By Mattys Leduc
 
-<img width="1919" height="1090" alt="image" src="https://github.com/user-attachments/assets/0619a572-bce5-4ab1-8722-312e9c6abaac" />
+<img width="1919" height="1086" alt="image" src="https://github.com/user-attachments/assets/1cb73b91-dad1-4e82-8761-72046cdf8815" />
 
 # Reflection
 Working on this project allowed me to combine several technical components such as motors, sensors, camera, and MQTT — into one functional system. The integration between the ultrasonic sensor, camera, and buzzer worked particularly well, creating a responsive autonomous mode that reacted accurately to nearby objects. Configuring MQTT and Adafruit IO also proved effective for remote monitoring and data visualization.
