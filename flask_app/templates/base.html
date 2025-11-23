@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Robot Car</title>
+</head>
+<body>
+
+<nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/show-data">Show Sensor Data</a>
+    <a href="/control">Control Car</a>
+    <a href="/line-tracking">Line Tracking</a>
+    <a href="/obstacle">Obstacle Avoidance</a>
+</nav>
+
+<div class="content">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

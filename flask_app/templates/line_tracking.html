@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Line Tracking Mode</h1>
+
+<button onclick="send('start')">Start Line Tracking</button>
+<button onclick="send('stop')">Stop Line Tracking</button>
+
+<script>
+function send(cmd) {
+    fetch("/line-command", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({command: cmd})
+    });
+}
+</script>
+{% endblock %}

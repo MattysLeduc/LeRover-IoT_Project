@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Manual Control</h1>
+
+<div class="controls">
+    <button onclick="send('forward')">Forward</button>
+    <button onclick="send('left')">Left</button>
+    <button onclick="send('right')">Right</button>
+    <button onclick="send('backward')">Backward</button>
+    <button onclick="send('stop')">Stop</button>
+</div>
+
+<script>
+function send(cmd) {
+    fetch("/send-command", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({command: cmd})
+    });
+}
+</script>
+
+{% endblock %}

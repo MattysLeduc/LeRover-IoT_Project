@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Historical Sensor Data</h1>
+
+<form method="POST">
+    <label>Select Date:</label>
+    <input type="date" name="date" required>
+    <button type="submit">Load</button>
+</form>
+
+{% if chart_data %}
+    <canvas id="distanceChart"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const labels = {{ chart_data|map(attribute='timestamp')|list }};
+        const distance = {{ chart_data|map(attribute='distance')|list }};
+
+        new Chart(document.getElementById("distanceChart"), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Distance (cm)',
+                    data: distance
+                }]
+            }
+        });
+    </script>
+{% endif %}
+
+{% endblock %}

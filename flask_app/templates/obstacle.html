@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Obstacle Avoidance Mode</h1>
+
+<button onclick="send('start')">Start Obstacle Mode</button>
+<button onclick="send('stop')">Stop Obstacle Mode</button>
+
+<script>
+function send(cmd) {
+    fetch("/obstacle-command", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({command: cmd})
+    });
+}
+</script>
+{% endblock %}
