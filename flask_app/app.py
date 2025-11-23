@@ -10,13 +10,13 @@ app = Flask(__name__)
 # -----------------------------------------------------------
 
 ADAFRUIT_IO_USERNAME = "mat_led"
-ADAFRUIT_IO_KEY = "aio_tZaS90wdIsNnViwl3S9xq1XyUbLy"
+ADAFRUIT_IO_KEY = ""
 
 NEON_DB = {
     "host": "ep-lively-pine-adzerwla-pooler.c-2.us-east-1.aws.neon.tech",
     "database": "neondb",
     "user": "neondb_owner",
-    "password": "npg_i9VqpD6REewK"
+    "password": ""
 }
 
 @app.route("/test-db")
