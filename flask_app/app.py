@@ -2,23 +2,36 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import psycopg2
 import datetime
+import os
+
+# -----------------------------------------------------------
+# Load .env locally (optional, not used by Render)
+# -----------------------------------------------------------
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except:
+    pass  # ignore if dotenv is not installed
 
 app = Flask(__name__)
 
 # -----------------------------------------------------------
-# CONFIG
+# CONFIG — pulled from environment variables
 # -----------------------------------------------------------
 
-ADAFRUIT_IO_USERNAME = "mat_led"
-ADAFRUIT_IO_KEY = ""
+ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
+ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
 
 NEON_DB = {
-    "host": "ep-lively-pine-adzerwla-pooler.c-2.us-east-1.aws.neon.tech",
-    "database": "neondb",
-    "user": "neondb_owner",
-    "password": ""
+    "host": os.getenv("NEON_HOST"),
+    "database": os.getenv("NEON_DB_NAME"),
+    "user": os.getenv("NEON_DB_USER"),
+    "password": os.getenv("NEON_DB_PASSWORD")
 }
 
+# -----------------------------------------------------------
+# TEST DB CONNECTION (for debugging on Render)
+# -----------------------------------------------------------
 @app.route("/test-db")
 def test_db():
     try:
@@ -33,7 +46,6 @@ def test_db():
 
     except Exception as e:
         return f"DB connection failed: {e}"
-
 
 # -----------------------------------------------------------
 # CONNECT TO NEON DATABASE (POSTGRES)
@@ -50,7 +62,6 @@ def query_neon(sql, params=()):
 # -----------------------------------------------------------
 # ROUTES
 # -----------------------------------------------------------
-
 @app.route("/")
 def home():
     return render_template("home.html")
