@@ -1,67 +1,83 @@
 #!/usr/bin/env python3
 import sqlite3
 import psycopg2
-import time
-from datetime import datetime
 from pathlib import Path
-import json
 
-BASE = Path(__file__).resolve().parent.parent
-LOCAL_DB = BASE / "data" / "local_telemetry.sqlite3"
-CFG_FILE = BASE / "config" / "cloud.json"
+# ---------------------------------------
+# Paths
+# ---------------------------------------
+BASE = Path(__file__).resolve().parents[1]
+SQLITE_PATH = BASE / "data" / "local_telemetry.sqlite3"
 
-def load_cfg():
-    return json.loads(CFG_FILE.read_text())
+# ---------------------------------------
+# Neon connection
+# ---------------------------------------
+NEON_URL = "postgresql://neondb_owner:npg_i9VqpD6REewK@ep-lively-pine-adzerwla-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
-def read_unsynced_rows(limit=200):
-    conn = sqlite3.connect(LOCAL_DB)
+# ---------------------------------------
+# Read newest rows that are not in Neon
+# ---------------------------------------
+def read_local_rows(last_id):
+    conn = sqlite3.connect(SQLITE_PATH)
     cur = conn.cursor()
+
     cur.execute("""
-        SELECT id, timestamp_iso, ultrasonic_cm, ir_left, ir_center, ir_right, line_state
+        SELECT id, timestamp_utc, ultrasonic_cm, ir_left, ir_center, ir_right, line_state
         FROM robot_data
-        WHERE synced = 0
-        ORDER BY id ASC
-        LIMIT ?;
-    """, (limit,))
+        WHERE id > ?
+        ORDER BY id ASC;
+    """, (last_id,))
+
     rows = cur.fetchall()
     conn.close()
     return rows
 
-def mark_synced(ids):
-    conn = sqlite3.connect(LOCAL_DB)
-    cur = conn.cursor()
-    cur.executemany("UPDATE robot_data SET synced=1 WHERE id=?", [(i,) for i in ids])
-    conn.commit()
-    conn.close()
+# ---------------------------------------
+# Get last synced ID from NeonDB
+# ---------------------------------------
+def get_last_neon_id(pg_cur):
+    pg_cur.execute("SELECT COALESCE(MAX(id), 0) FROM robot_data;")
+    return pg_cur.fetchone()[0]
 
-def send_to_neon(rows):
-    cfg = load_cfg()
-    url = cfg["postgres_url"]
-
-    conn = psycopg2.connect(url)
-    cur = conn.cursor()
-
+# ---------------------------------------
+# Upload a batch of rows
+# ---------------------------------------
+def upload_rows(pg_cur, rows):
     for row in rows:
-        id_, ts, u, L, M, R, state = row
-        cur.execute("""
-            INSERT INTO robot_data (timestamp, ultrasonic, ir_left, ir_center, ir_right, line_state)
-            VALUES (%s, %s, %s, %s, %s, %s);
-        """, (ts, u, L, M, R, state))
+        pg_cur.execute("""
+            INSERT INTO robot_data
+            (id, timestamp, ultrasonic, ir_left, ir_center, ir_right, line_state)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING;
+        """, row)
 
-    conn.commit()
-    conn.close()
-
+# ---------------------------------------
+# MAIN
+# ---------------------------------------
 def main():
-    print("[cloud-sync] running… CTRL+C to exit")
-    while True:
-        rows = read_unsynced_rows()
-        if rows:
-            print(f"[cloud-sync] syncing {len(rows)} rows…")
-            send_to_neon(rows)
-            mark_synced([r[0] for r in rows])
-        else:
-            print("[cloud-sync] nothing to sync")
-        time.sleep(10)
+    print("[cloud-sync] running... press Ctrl+C to stop")
+
+    # Connect to Neon
+    pg = psycopg2.connect(NEON_URL)
+    pg_cur = pg.cursor()
+
+    # 1. find last synced ID in Neon
+    last_id = get_last_neon_id(pg_cur)
+    print(f"[cloud-sync] Last ID in Neon = {last_id}")
+
+    # 2. read new rows from SQLite
+    rows = read_local_rows(last_id)
+    print(f"[cloud-sync] Found {len(rows)} new rows to upload")
+
+    if rows:
+        upload_rows(pg_cur, rows)
+        pg.commit()
+        print(f"[cloud-sync] Uploaded {len(rows)} rows -> Neon")
+
+    pg_cur.close()
+    pg.close()
+    print("[cloud-sync] Done.")
+
 
 if __name__ == "__main__":
     main()
