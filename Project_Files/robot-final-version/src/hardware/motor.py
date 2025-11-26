@@ -66,10 +66,10 @@ class Ordinary_Car:
     def set_motor_model(self, duty1, duty2, duty3, duty4):
         duty1,duty2,duty3,duty4 = self.duty_range(duty1,duty2,duty3,duty4)
         # SWAP left<->right AND INVERT polarity (negatives) for your wiring
-        self.left_upper_wheel(-duty3)
-        self.left_lower_wheel(-duty4)
-        self.right_upper_wheel(-duty1)
-        self.right_lower_wheel(-duty2)
+        self.left_upper_wheel(duty3)
+        self.left_lower_wheel(duty4)
+        self.right_upper_wheel(duty1)
+        self.right_lower_wheel(duty2)
 
 
 
