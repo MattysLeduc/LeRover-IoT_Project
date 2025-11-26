@@ -3,7 +3,7 @@ import os, sys, json, time, csv, signal, base64
 from pathlib import Path
 from datetime import datetime, timezone
 from dateutil import tz
-from db.local_db import insert_row
+from db import local_db
 import paho.mqtt.client as mqtt
 
 BASE = Path(__file__).resolve().parent.parent   # repo/
