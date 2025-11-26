@@ -1,0 +1,13 @@
+# MQTT client for Adafruit IO communication
+paho-mqtt>=1.6,<3.0
+
+# Date/time utilities for timezone handling
+python-dateutil>=2.8.0
+
+# GUI framework for server application (optional)
+PyQt5>=5.15.0
+
+# GPIO control library for Raspberry Pi
+gpiozero>=1.6.0
+
+
