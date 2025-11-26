@@ -1,0 +1,9 @@
+{
+    "Connect_Version": 2,
+    "Pcb_Version": 2,
+    "Pi_Version": 1,
+    "Led_Count": 8,
+    "Led_Brightness": 20,
+    "Spi_Mode": 1,
+    "Led_Mask": "0xFF"
+}

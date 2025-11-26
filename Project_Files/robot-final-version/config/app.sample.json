@@ -1,0 +1,9 @@
+{
+  "timezone": "America/Toronto",
+  "local_log": { "enabled": true, "path": "logs/robot_telemetry.csv" },
+  "intervals": {
+    "ultrasonic_sec": 0.5,
+    "infrared_sec": 0.2,
+    "camera_sec": 5.0
+  }
+}

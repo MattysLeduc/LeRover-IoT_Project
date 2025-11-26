@@ -1,0 +1,15 @@
+{
+  "adafruit": {
+    "username": "YOUR_AIO_USERNAME",
+    "key": "YOUR_AIO_KEY",
+    "feeds": {
+      "ultrasonic_cm": "ultra-distance",
+      "ir_left": "line-ir-left",
+      "ir_center": "line-ir-center",
+      "ir_right": "line-ir-right",
+      "line_state": "line-state",
+      "camera_status": "cam-status",
+      "camera_thumb": "cam-thumb"
+    }
+  }
+}
