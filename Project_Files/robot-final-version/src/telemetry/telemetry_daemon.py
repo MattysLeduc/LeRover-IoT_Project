@@ -3,6 +3,7 @@ import os, sys, json, time, csv, signal, base64
 from pathlib import Path
 from datetime import datetime, timezone
 from dateutil import tz
+from db.local_db import insert_row
 import paho.mqtt.client as mqtt
 
 BASE = Path(__file__).resolve().parent.parent   # repo/
@@ -213,6 +214,8 @@ def main():
                 # Log row (1 Hz is fine; here we log on each IR tick)
                 d = read_ultra_cm()
                 csvlog.log(now_local, d, L, M, R, state)
+                now_utc = datetime.now(timezone.utc)
+                insert_row(now_utc, d, L, M, R, state)
 
             # Camera status heartbeat (we don't access camera here; car_tui owns it)
             if now - t_cam >= dt_cam:
