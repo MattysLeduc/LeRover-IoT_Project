@@ -3,31 +3,65 @@
 
 <h1>Historical Sensor Data</h1>
 
-<form method="POST">
+<form method="POST" class="form-section">
     <label>Select Date:</label>
     <input type="date" name="date" required>
-    <button type="submit">Load</button>
+    <button type="submit" class="btn-primary">Load</button>
 </form>
 
 {% if chart_data %}
-    <canvas id="distanceChart"></canvas>
+    <div class="chart-container">
+        <canvas id="distanceChart"></canvas>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const labels = {{ chart_data|map(attribute='timestamp')|list }};
-        const distance = {{ chart_data|map(attribute='distance')|list }};
 
-        new Chart(document.getElementById("distanceChart"), {
-            type: 'line',
+    <!-- Convert to safe JSON for JS -->
+    <script>
+        const chartData = {{ chart_data | tojson | safe }};
+
+        // Extract labels + data
+        const labels = chartData.map(row => row.timestamp);
+        const ultrasonic = chartData.map(row => row.ultrasonic);
+
+        const ctx = document.getElementById("distanceChart").getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Distance (cm)',
-                    data: distance
+                    label: "Ultrasonic (cm)",
+                    data: ultrasonic,
+                    borderColor: "rgba(0, 200, 255, 1)",
+                    backgroundColor: "rgba(0, 200, 255, 0.2)",
+                    borderWidth: 2,
+                    tension: 0.25,
+                    pointRadius: 0
                 }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: { color: "#ccc" },
+                        grid: { color: "rgba(255,255,255,0.1)" }
+                    },
+                    x: {
+                        ticks: { color: "#ccc" },
+                        grid: { color: "rgba(255,255,255,0.1)" }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: "#fff" } }
+                }
             }
         });
     </script>
+
+{% else %}
+    <p style="margin-top:20px; opacity:0.8;">No data loaded yet. Select a date above.</p>
 {% endif %}
 
 {% endblock %}

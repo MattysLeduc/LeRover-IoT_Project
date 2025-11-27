@@ -89,7 +89,7 @@ def show_data():
 
         chart_data = [
             {
-                "timestamp": r[0].strftime("%H:%M:%S"),
+                "timestamp": r[0].strftime("%H:%M:%S") if r[0] else None,
                 "ultrasonic": r[1],
                 "ir_left": r[2],
                 "ir_center": r[3],
@@ -113,9 +113,10 @@ def send_command():
     command = request.json.get("command")
 
     url = f"https://io.adafruit.com/api/v2/{ADAFRUIT_IO_USERNAME}/feeds/car-control/data"
-    requests.post(url, json={"value": command}, headers={
+    response = requests.post(url, data={"value": command}, headers={
         "X-AIO-Key": ADAFRUIT_IO_KEY
     })
+    print("AIO Response:", response.text)  # <-- DEBUG PRINT
 
     return jsonify({"status": "sent", "command": command})
 
