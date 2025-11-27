@@ -3,6 +3,7 @@ import requests
 import psycopg2
 import datetime
 import os
+import pytz
 
 # -----------------------------------------------------------
 # Load .env locally (optional)
@@ -79,17 +80,20 @@ def show_data():
         date = request.form.get("date")
 
         sql = """
-            SELECT timestamp, ultrasonic, ir_left, ir_center, ir_right, line_state
-            FROM robot_data
-            WHERE DATE(timestamp) = %s
-            ORDER BY timestamp ASC;
-        """
+              SELECT
+                  timestamp, ultrasonic, ir_left, ir_center, ir_right, line_state
+              FROM robot_data
+              WHERE DATE (timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Toronto') = %s
+              ORDER BY timestamp ASC; \
+              """
 
         rows = query_neon(sql, (date,))
 
+        tz = pytz.timezone("America/Toronto")
+
         chart_data = [
             {
-                "timestamp": r[0].strftime("%H:%M:%S") if r[0] else None,
+                "timestamp": r[0].astimezone(tz).strftime("%H:%M:%S") if r[0] else None,
                 "ultrasonic": r[1],
                 "ir_left": r[2],
                 "ir_center": r[3],
@@ -132,8 +136,8 @@ def line_command():
     cmd = request.json.get("command")
 
     url = f"https://io.adafruit.com/api/v2/{ADAFRUIT_IO_USERNAME}/feeds/line-tracking/data"
-    requests.post(url, json={"value": cmd}, headers={"X-AIO-Key": ADAFRUIT_IO_KEY})
-
+    response = requests.post(url, data={"value": cmd}, headers={"X-AIO-Key": ADAFRUIT_IO_KEY})
+    print("AIO Response:", response.text)
     return jsonify({"sent": cmd})
 
 # -----------------------------------------------------------
@@ -148,8 +152,8 @@ def obstacle_command():
     cmd = request.json.get("command")
 
     url = f"https://io.adafruit.com/api/v2/{ADAFRUIT_IO_USERNAME}/feeds/obstacle/data"
-    requests.post(url, json={"value": cmd}, headers={"X-AIO-Key": ADAFRUIT_IO_KEY})
-
+    response = requests.post(url, data={"value": cmd}, headers={"X-AIO-Key": ADAFRUIT_IO_KEY})
+    print("AIO Response:", response.text)
     return jsonify({"sent": cmd})
 
 # -----------------------------------------------------------
