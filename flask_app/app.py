@@ -3,10 +3,9 @@ import requests
 import psycopg2
 import datetime
 import os
-import pytz
 
 # -----------------------------------------------------------
-# Load .env locally (optional)
+# Load .env (optional)
 # -----------------------------------------------------------
 try:
     from dotenv import load_dotenv
@@ -17,7 +16,7 @@ except:
 app = Flask(__name__)
 
 # -----------------------------------------------------------
-# CONFIG — pulled from environment variables
+# CONFIG — environment variables
 # -----------------------------------------------------------
 
 ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
@@ -31,7 +30,7 @@ NEON_DB = {
 }
 
 # -----------------------------------------------------------
-# TEST DB CONNECTION
+# DB HELPERS
 # -----------------------------------------------------------
 @app.route("/test-db")
 def test_db():
@@ -46,9 +45,6 @@ def test_db():
     except Exception as e:
         return f"DB ERROR: {e}"
 
-# -----------------------------------------------------------
-# DB QUERY HELPER
-# -----------------------------------------------------------
 def query_neon(sql, params=()):
     conn = psycopg2.connect(**NEON_DB)
     cur = conn.cursor()
@@ -70,7 +66,7 @@ def about():
     return render_template("about.html")
 
 # -----------------------------------------------------------
-# SHOW SENSOR DATA (LIVE + HISTORICAL)
+# SHOW SENSOR DATA
 # -----------------------------------------------------------
 @app.route("/show-data", methods=["GET", "POST"])
 def show_data():
@@ -83,17 +79,15 @@ def show_data():
               SELECT
                   timestamp, ultrasonic, ir_left, ir_center, ir_right, line_state
               FROM robot_data
-              WHERE DATE (timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Toronto') = %s
-              ORDER BY timestamp ASC; \
+              WHERE DATE(timestamp) = %s
+              ORDER BY timestamp ASC;
               """
 
         rows = query_neon(sql, (date,))
 
-        tz = pytz.timezone("America/Toronto")
-
         chart_data = [
             {
-                "timestamp": r[0].astimezone(tz).strftime("%H:%M:%S") if r[0] else None,
+                "timestamp": r[0].strftime("%H:%M:%S") if r[0] else None,
                 "ultrasonic": r[1],
                 "ir_left": r[2],
                 "ir_center": r[3],
@@ -106,7 +100,7 @@ def show_data():
     return render_template("show_data.html", chart_data=chart_data)
 
 # -----------------------------------------------------------
-# CONTROL CAR — send commands to Adafruit IO
+# CONTROL CAR
 # -----------------------------------------------------------
 @app.route("/control")
 def control_car():
@@ -120,7 +114,8 @@ def send_command():
     response = requests.post(url, data={"value": command}, headers={
         "X-AIO-Key": ADAFRUIT_IO_KEY
     })
-    print("AIO Response:", response.text)  # <-- DEBUG PRINT
+
+    print("AIO Response:", response.text)
 
     return jsonify({"status": "sent", "command": command})
 
@@ -137,7 +132,9 @@ def line_command():
 
     url = f"https://io.adafruit.com/api/v2/{ADAFRUIT_IO_USERNAME}/feeds/line-tracking/data"
     response = requests.post(url, data={"value": cmd}, headers={"X-AIO-Key": ADAFRUIT_IO_KEY})
+
     print("AIO Response:", response.text)
+
     return jsonify({"sent": cmd})
 
 # -----------------------------------------------------------
@@ -153,7 +150,9 @@ def obstacle_command():
 
     url = f"https://io.adafruit.com/api/v2/{ADAFRUIT_IO_USERNAME}/feeds/obstacle/data"
     response = requests.post(url, data={"value": cmd}, headers={"X-AIO-Key": ADAFRUIT_IO_KEY})
+
     print("AIO Response:", response.text)
+
     return jsonify({"sent": cmd})
 
 # -----------------------------------------------------------
