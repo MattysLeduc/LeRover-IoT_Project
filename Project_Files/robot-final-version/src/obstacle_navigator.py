@@ -164,10 +164,25 @@ class HeadUltrasonicNavigator:
         self.car.set_motor_model(+pw,+pw,-pw,-pw); time.sleep(dur); self.stop()
 
     # sensing
+    ULTRA_CACHE = Path("/tmp/ultra_cm.txt")
+    
     def _read_cm(self)->Optional[float]:
-        d=self.us.get_distance()
-        if d is None or d<=0 or d>400: return None
-        return d
+        """Read ultrasonic sensor - GPIO first, write to cache for telemetry"""
+        # Read directly from GPIO (primary method)
+        if hasattr(self.us, 'get_distance') and not isinstance(self.us, type(None)):
+            try:
+                d = self.us.get_distance()
+                if d is None or d <= 0 or d > 400: 
+                    return None
+                # Write to cache for telemetry to read
+                try:
+                    self.ULTRA_CACHE.write_text(f"{d:.1f}")
+                except:
+                    pass
+                return d
+            except Exception:
+                return None
+        return None
     def _avg_cm(self,n=2,delay=0.0)->float:
         vals=[]
         for _ in range(n):
@@ -180,6 +195,7 @@ class HeadUltrasonicNavigator:
         cur_p, cur_t = self.ps.pos, self.to.pos
         self.pan.angle(int(clamp(pan_deg, self.pan.min_deg, self.pan.max_deg)))
         self.tilt.angle(int(clamp(tilt_deg, self.tilt.min_deg, self.tilt.max_deg)))
+        # Use _read_cm which now checks cache first
         d=self._avg_cm(n=2,delay=0.0)
         # return to sweep immediately
         self.pan.angle(cur_p); self.tilt.angle(cur_t)
@@ -203,44 +219,55 @@ class HeadUltrasonicNavigator:
         # sample every tick (instant reaction at threshold)
         if self.ticks % self.sample_every == 0:
             ahead=self._avg_cm(n=2,delay=0.0); self.last_ahead=ahead
-            try: Path('/tmp/ultra_cm.txt').write_text(f"{ahead:.1f}")
-            except Exception: pass
+            # Write to cache file for telemetry daemon (always, even if not verbose)
+            try: 
+                Path('/tmp/ultra_cm.txt').write_text(f"{ahead:.1f}")
+            except Exception: 
+                pass
             if verbose: print(f"[NAV] ahead {ahead:.1f} cm @ pan {ppos:3d} tilt {tpos:3d}")
+        else:
+            # Even when not sampling, write last known distance to keep cache fresh
+            if self.last_ahead < 9999.0:
+                try:
+                    Path('/tmp/ultra_cm.txt').write_text(f"{self.last_ahead:.1f}")
+                except Exception:
+                    pass
 
-            if ahead <= self.obs_th:
-                # STOP immediately
-                self.stop()
-                if verbose: print(f"[NAV] <= {self.obs_th:.0f}cm -> STOP + REVERSE")
-                # reverse
-                self.reverse(t=self.reverse_time)
+        # Check for obstacles using last_ahead (outside the if/else!)
+        if self.last_ahead <= self.obs_th:
+            # STOP immediately
+            self.stop()
+            if verbose: print(f"[NAV] <= {self.obs_th:.0f}cm -> STOP + REVERSE")
+            # reverse
+            self.reverse(t=self.reverse_time)
 
-                # quick L/R + up/down probe around center
-                center_p = self.pan.center
-                center_t = self.tilt.center
-                # left/right near center tilt
-                left_mid  = self._peek_pan_tilt(center_p+25, center_t)
-                right_mid = self._peek_pan_tilt(center_p-25, center_t)
-                # up/down straight ahead (check over/under)
-                up_ahead   = self._peek_pan_tilt(center_p, min(self.tilt.max_deg, center_t+15))
-                down_ahead = self._peek_pan_tilt(center_p, max(self.tilt.min_deg, center_t-15))
-                if verbose: print(f"[NAV] probe Lm={left_mid:.1f} Rm={right_mid:.1f} Up={up_ahead:.1f} Dn={down_ahead:.1f}")
+            # quick L/R + up/down probe around center
+            center_p = self.pan.center
+            center_t = self.tilt.center
+            # left/right near center tilt
+            left_mid  = self._peek_pan_tilt(center_p+25, center_t)
+            right_mid = self._peek_pan_tilt(center_p-25, center_t)
+            # up/down straight ahead (check over/under)
+            up_ahead   = self._peek_pan_tilt(center_p, min(self.tilt.max_deg, center_t+15))
+            down_ahead = self._peek_pan_tilt(center_p, max(self.tilt.min_deg, center_t-15))
+            if verbose: print(f"[NAV] probe Lm={left_mid:.1f} Rm={right_mid:.1f} Up={up_ahead:.1f} Dn={down_ahead:.1f}")
 
-                # choose best horizontal side; if both bad, prefer the one with better vertical clearance
-                L = max(left_mid, up_ahead, down_ahead) if left_mid < self.obs_th else left_mid
-                R = max(right_mid, up_ahead, down_ahead) if right_mid < self.obs_th else right_mid
-                if L > R:
-                    dur=self._pivot_time_from_dist(L)
-                    if verbose: print(f"[NAV] pivot LEFT for {dur:.2f}s")
-                    self.pivot_left(dur=dur)
-                else:
-                    dur=self._pivot_time_from_dist(R)
-                    if verbose: print(f"[NAV] pivot RIGHT for {dur:.2f}s")
-                    self.pivot_right(dur=dur)
+            # choose best horizontal side; if both bad, prefer the one with better vertical clearance
+            L = max(left_mid, up_ahead, down_ahead) if left_mid < self.obs_th else left_mid
+            R = max(right_mid, up_ahead, down_ahead) if right_mid < self.obs_th else right_mid
+            if L > R:
+                dur=self._pivot_time_from_dist(L)
+                if verbose: print(f"[NAV] pivot LEFT for {dur:.2f}s")
+                self.pivot_left(dur=dur)
+            else:
+                dur=self._pivot_time_from_dist(R)
+                if verbose: print(f"[NAV] pivot RIGHT for {dur:.2f}s")
+                self.pivot_right(dur=dur)
 
-                # short forward roll to clear obstacle zone
-                self.forward(int(self.forward_power*0.7))
-                time.sleep(self.post_roll_time)
-                self.stop()
+            # short forward roll to clear obstacle zone
+            self.forward(int(self.forward_power*0.7))
+            time.sleep(self.post_roll_time)
+            self.stop()
 
 # ---------- demo runner ----------
 def main():
@@ -277,7 +304,20 @@ def main():
     car = Ordinary_Car()
     pan = PanServo(channel=args.pan_channel, min_deg=args.pan_min, max_deg=args.pan_max, center=args.pan_center)
     tilt= TiltServo(channel=args.tilt_channel, min_deg=args.tilt_min, max_deg=args.tilt_max, center=args.tilt_center)
-    us  = Ultrasonic()
+    
+    # Try to initialize ultrasonic sensor, but fall back to cache-only mode if GPIO is busy
+    us = None
+    try:
+        us = Ultrasonic()
+        print("[NAV] Ultrasonic sensor initialized (GPIO mode)")
+    except Exception as e:
+        print(f"[NAV] Warning: Could not initialize ultrasonic sensor (GPIO busy?): {e}")
+        print("[NAV] Will use cache-only mode (reading from /tmp/ultra_cm.txt)")
+        # Create a dummy object that will be ignored
+        class DummyUltrasonic:
+            def get_distance(self): return None
+        us = DummyUltrasonic()
+    
     ps  = PanSweeper(pan, lo=args.pan_min, hi=args.pan_max, speed_deg_per_tick=args.sweep_speed)
     to  = TiltOscillator(tilt, low=args.tilt_min, high=args.tilt_max, step=args.tilt_step)
 
@@ -291,6 +331,16 @@ def main():
     )
 
     print("Head-scan navigator ready. Ctrl+C to stop.")
+    
+    # Write initial distance reading to cache for telemetry
+    try:
+        initial_dist = nav._avg_cm(n=2, delay=0.0)
+        if initial_dist < 9999.0:
+            Path('/tmp/ultra_cm.txt').write_text(f"{initial_dist:.1f}")
+            print(f"[NAV] Initial distance: {initial_dist:.1f} cm (written to cache)")
+    except Exception as e:
+        print(f"[NAV] Warning: Could not write initial distance: {e}")
+    
     try:
         while True:
             nav.tick(verbose=args.verbose)

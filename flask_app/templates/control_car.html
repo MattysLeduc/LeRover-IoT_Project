@@ -1,23 +1,133 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
+{% block title %}Control - YVLSWITCH{% endblock %} 
 {% block content %}
-<h1>Manual Control</h1>
+<div class="container">
+  <h1 class="page-title">Manual Control</h1>
 
-<div class="controls">
-    <button onclick="send('forward')">Forward</button>
-    <button onclick="send('left')">Left</button>
-    <button onclick="send('right')">Right</button>
-    <button onclick="send('backward')">Backward</button>
-    <button onclick="send('stop')">Stop</button>
+  <div class="control-section">
+    <div class="card">
+      <div class="card-header">
+        <h2>◈ Motor Control</h2>
+      </div>
+      <div class="card-body">
+        <div class="motor-control">
+          <div class="control-grid">
+            <div></div>
+            <button class="btn btn-primary btn-control btn-up" onclick="controlMotor('forward')">
+              ▲ FWD
+            </button>
+            <div></div>
+            <button class="btn btn-primary btn-control btn-left" onclick="controlMotor('left')">
+              ◀ LEFT
+            </button>
+            <button class="btn btn-control btn-stop" onclick="controlMotor('stop')">
+              ■ STOP
+            </button>
+            <button class="btn btn-primary btn-control btn-right" onclick="controlMotor('right')">
+              RIGHT ▶
+            </button>
+            <div></div>
+            <button class="btn btn-primary btn-control btn-down" onclick="controlMotor('backward')">
+              ▼ REV
+            </button>
+            <div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>◈ Device Control</h2>
+      </div>
+      <div class="card-body">
+        <div class="device-controls">
+          <div class="device-item">
+            <h3>◐ LED Array</h3>
+            <button class="btn btn-success" onclick="controlLED('on')">ACTIVATE</button>
+            <button class="btn btn-danger" onclick="controlLED('off')">DEACTIVATE</button>
+          </div>
+          <div class="device-item">
+            <h3>◎ Buzzer</h3>
+            <button class="btn btn-success" onclick="controlBuzzer('on')">ACTIVATE</button>
+            <button class="btn btn-danger" onclick="controlBuzzer('off')">DEACTIVATE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-message" id="status-message"></div>
 </div>
+{% endblock %} 
 
+{% block scripts %}
 <script>
-function send(cmd) {
-    fetch("/send-command", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({command: cmd})
-    });
-}
-</script>
+  function controlMotor(action) {
+    fetch("/api/control/motor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: action }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        showStatus(
+          data.success ? `MOTOR: ${action.toUpperCase()}` : "COMMAND FAILED",
+          data.success
+        );
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showStatus("CONNECTION ERROR", false);
+      });
+  }
 
+  function controlLED(state) {
+    fetch("/api/control/led", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: state }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        showStatus(
+          data.success ? `LED: ${state.toUpperCase()}` : "COMMAND FAILED",
+          data.success
+        );
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showStatus("CONNECTION ERROR", false);
+      });
+  }
+
+  function controlBuzzer(state) {
+    fetch("/api/control/buzzer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: state }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        showStatus(
+          data.success ? `BUZZER: ${state.toUpperCase()}` : "COMMAND FAILED",
+          data.success
+        );
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showStatus("CONNECTION ERROR", false);
+      });
+  }
+
+  function showStatus(message, success) {
+    const statusDiv = document.getElementById("status-message");
+    statusDiv.textContent = message;
+    statusDiv.className = "status-message " + (success ? "success" : "error");
+    setTimeout(() => {
+      statusDiv.textContent = "";
+      statusDiv.className = "status-message";
+    }, 2500);
+  }
+</script>
 {% endblock %}

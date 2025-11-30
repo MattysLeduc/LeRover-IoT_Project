@@ -1,0 +1,279 @@
+{% extends "base.html" %} {% block title %}Sensors - YVLSWITCH{% endblock %} {%
+block content %}
+<div class="container">
+  <h1 class="page-title">Sensor Data</h1>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>◈ Historical Data Query</h2>
+    </div>
+    <div class="card-body">
+      <div class="date-selector">
+        <label for="date-input">Select Date:</label>
+        <input type="date" id="date-input" value="" />
+        <button class="btn btn-primary" onclick="loadHistoricalData()">
+          Load Data
+        </button>
+        <button class="btn btn-secondary" onclick="loadAllData()">
+          Load All
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="card">
+      <div class="card-header">
+        <h3>⚡ Ultrasonic Distance (cm)</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="ultrasonic-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>◀ IR Left Sensor</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="ir-left-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>● IR Center Sensor</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="ir-center-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>▶ IR Right Sensor</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="ir-right-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  let charts = {};
+
+  // Cyberpunk theme colors
+  const neonCyan = "#00f5ff";
+  const neonPink = "#ff00ff";
+  const neonGreen = "#39ff14";
+  const neonOrange = "#ff6b35";
+  const darkBg = "#0a0a0f";
+  const textSecondary = "#8892b0";
+
+  function initCharts() {
+    // Common chart options with cyberpunk styling
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: textSecondary,
+            font: { family: "Orbitron", size: 12 },
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: "rgba(0, 245, 255, 0.1)",
+            drawBorder: false,
+          },
+          ticks: {
+            color: textSecondary,
+            font: { family: "Rajdhani", size: 11 },
+          },
+        },
+        x: {
+          grid: {
+            color: "rgba(0, 245, 255, 0.05)",
+            drawBorder: false,
+          },
+          ticks: {
+            color: textSecondary,
+            font: { family: "Rajdhani", size: 10 },
+            maxRotation: 45,
+            minRotation: 45,
+          },
+        },
+      },
+    };
+
+    charts.ultrasonic = new Chart(document.getElementById("ultrasonic-chart"), {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "Distance (cm)",
+            data: [],
+            borderColor: neonCyan,
+            backgroundColor: "rgba(0, 245, 255, 0.1)",
+            borderWidth: 3,
+            pointBackgroundColor: neonCyan,
+            pointBorderColor: neonCyan,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: true,
+          },
+        ],
+      },
+      options: chartOptions,
+    });
+
+    charts.irLeft = new Chart(document.getElementById("ir-left-chart"), {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "IR Left",
+            data: [],
+            borderColor: neonPink,
+            backgroundColor: "rgba(255, 0, 255, 0.1)",
+            borderWidth: 3,
+            pointBackgroundColor: neonPink,
+            pointBorderColor: neonPink,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: true,
+          },
+        ],
+      },
+      options: chartOptions,
+    });
+
+    charts.irCenter = new Chart(document.getElementById("ir-center-chart"), {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "IR Center",
+            data: [],
+            borderColor: neonOrange,
+            backgroundColor: "rgba(255, 107, 53, 0.1)",
+            borderWidth: 3,
+            pointBackgroundColor: neonOrange,
+            pointBorderColor: neonOrange,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: true,
+          },
+        ],
+      },
+      options: chartOptions,
+    });
+
+    charts.irRight = new Chart(document.getElementById("ir-right-chart"), {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "IR Right",
+            data: [],
+            borderColor: neonGreen,
+            backgroundColor: "rgba(57, 255, 20, 0.1)",
+            borderWidth: 3,
+            pointBackgroundColor: neonGreen,
+            pointBorderColor: neonGreen,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: true,
+          },
+        ],
+      },
+      options: chartOptions,
+    });
+  }
+
+  function updateCharts(data) {
+    // Format timestamps to be shorter
+    const formattedTimestamps = data.timestamps.map((ts) => {
+      const d = new Date(ts);
+      return d.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    });
+
+    // Update ultrasonic chart
+    charts.ultrasonic.data.labels = formattedTimestamps;
+    charts.ultrasonic.data.datasets[0].data = data.ultrasonic;
+    charts.ultrasonic.update();
+
+    // Update IR charts
+    charts.irLeft.data.labels = formattedTimestamps;
+    charts.irLeft.data.datasets[0].data = data.ir_left;
+    charts.irLeft.update();
+
+    charts.irCenter.data.labels = formattedTimestamps;
+    charts.irCenter.data.datasets[0].data = data.ir_center;
+    charts.irCenter.update();
+
+    charts.irRight.data.labels = formattedTimestamps;
+    charts.irRight.data.datasets[0].data = data.ir_right;
+    charts.irRight.update();
+  }
+
+  function loadHistoricalData() {
+    const date = document.getElementById("date-input").value;
+    if (!date) {
+      alert("Please select a date");
+      return;
+    }
+
+    fetch("/api/historical-data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: date }),
+    })
+      .then((response) => response.json())
+      .then((data) => updateCharts(data))
+      .catch((error) => {
+        console.error("Error loading historical data:", error);
+        alert("Error loading data. Please try again.");
+      });
+  }
+
+  function loadAllData() {
+    fetch("/api/historical-data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    })
+      .then((response) => response.json())
+      .then((data) => updateCharts(data))
+      .catch((error) => {
+        console.error("Error loading data:", error);
+        alert("Error loading data. Please try again.");
+      });
+  }
+
+  // Initialize charts on page load
+  initCharts();
+
+  // Set today's date as default
+  document.getElementById("date-input").valueAsDate = new Date();
+
+  // Load today's data automatically
+  loadHistoricalData();
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Obstacle Avoidance - YVLSWITCH{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Obstacle Avoidance</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h2>Obstacle Avoidance Algorithm</h2>
+        </div>
+        <div class="card-body">
+            <p>The obstacle avoidance algorithm uses the ultrasonic sensor to detect obstacles and navigate around them.</p>
+            
+            <div class="algorithm-controls">
+                <button class="btn btn-success btn-large" id="start-btn" onclick="startObstacleAvoidance()">
+                    ▶ Start Obstacle Avoidance
+                </button>
+                <button class="btn btn-danger btn-large" id="stop-btn" onclick="stopObstacleAvoidance()" disabled>
+                    ⏹ Stop Obstacle Avoidance
+                </button>
+            </div>
+
+            <div class="status-indicator">
+                <div class="status-light" id="status-light"></div>
+                <span id="status-text">Stopped</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Current Distance</h2>
+        </div>
+        <div class="card-body">
+            <div class="distance-display" id="distance-display">--</div>
+            <div class="distance-unit">cm</div>
+            <div class="distance-update" id="distance-update">Waiting for data...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let isRunning = false;
+
+    function startObstacleAvoidance() {
+        fetch('/api/obstacle-avoidance/start', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                isRunning = true;
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('stop-btn').disabled = false;
+                document.getElementById('status-light').className = 'status-light active';
+                document.getElementById('status-text').textContent = 'Running';
+            } else {
+                alert('Failed to start obstacle avoidance');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error starting obstacle avoidance');
+        });
+    }
+
+    function stopObstacleAvoidance() {
+        fetch('/api/obstacle-avoidance/stop', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                isRunning = false;
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = true;
+                document.getElementById('status-light').className = 'status-light';
+                document.getElementById('status-text').textContent = 'Stopped';
+            } else {
+                alert('Failed to stop obstacle avoidance');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error stopping obstacle avoidance');
+        });
+    }
+
+    // Update distance display
+    function updateDistance() {
+        fetch('/api/live-data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.ultrasonic_cm !== null) {
+                    document.getElementById('distance-display').textContent = parseFloat(data.ultrasonic_cm).toFixed(1);
+                    document.getElementById('distance-update').textContent = 'Last update: ' + new Date().toLocaleTimeString();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching distance:', error);
+            });
+    }
+
+    // Update distance every 2 seconds
+    setInterval(updateDistance, 2000);
+    updateDistance();
+</script>
+{% endblock %}
+

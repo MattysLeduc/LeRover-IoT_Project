@@ -1,5 +1,151 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
+{% block title %}Dashboard - YVLSWITCH{% endblock %}
 {% block content %}
-<h1>Robot Car Dashboard</h1>
-<p>Welcome to the IoT Smart Robot Car Interface.</p>
+<div class="container">
+  <h1 class="page-title">System Dashboard</h1>
+
+  <div class="dashboard-grid">
+    <!-- Ultrasonic Distance -->
+    <div class="card">
+      <div class="card-header">
+        <h3>⚡ Ultrasonic Range</h3>
+      </div>
+      <div class="card-body">
+        <div class="sensor-value" id="ultrasonic-value">--</div>
+        <div class="sensor-unit">centimeters</div>
+        <div class="sensor-update" id="ultrasonic-update">awaiting data...</div>
+      </div>
+    </div>
+
+    <!-- IR Left -->
+    <div class="card">
+      <div class="card-header">
+        <h3>◀ IR Left Sensor</h3>
+      </div>
+      <div class="card-body">
+        <div class="sensor-value" id="ir-left-value">--</div>
+        <div class="sensor-unit">detection</div>
+        <div class="sensor-update" id="ir-left-update">awaiting data...</div>
+      </div>
+    </div>
+
+    <!-- IR Center -->
+    <div class="card">
+      <div class="card-header">
+        <h3>● IR Center Sensor</h3>
+      </div>
+      <div class="card-body">
+        <div class="sensor-value" id="ir-center-value">--</div>
+        <div class="sensor-unit">detection</div>
+        <div class="sensor-update" id="ir-center-update">awaiting data...</div>
+      </div>
+    </div>
+
+    <!-- IR Right -->
+    <div class="card">
+      <div class="card-header">
+        <h3>▶ IR Right Sensor</h3>
+      </div>
+      <div class="card-body">
+        <div class="sensor-value" id="ir-right-value">--</div>
+        <div class="sensor-unit">detection</div>
+        <div class="sensor-update" id="ir-right-update">awaiting data...</div>
+      </div>
+    </div>
+
+    <!-- Line State -->
+    <div class="card">
+      <div class="card-header">
+        <h3>═ Line State</h3>
+      </div>
+      <div class="card-body">
+        <div class="sensor-value" id="line-state-value">---</div>
+        <div class="sensor-unit">pattern</div>
+        <div class="sensor-update" id="line-state-update">awaiting data...</div>
+      </div>
+    </div>
+
+    <!-- System Status Card -->
+    <div class="card status-card">
+      <div class="card-header">
+        <h3>◈ System Status</h3>
+      </div>
+      <div class="card-body">
+        <div class="status-item">
+          <span class="status-label">Connection Status</span>
+          <span class="status-value" id="connection-status">INITIALIZING...</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Last Data Sync</span>
+          <span class="status-value" id="last-update">--</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">System Version</span>
+          <span class="status-value">YVLSWITCH v3.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h2>◆ Quick Actions</h2>
+    <div class="action-buttons">
+      <a href="{{ url_for('sensor_data') }}" class="btn btn-primary btn-large">View Sensors</a>
+      <a href="{{ url_for('control_car') }}" class="btn btn-secondary btn-large">Control Car</a>
+      <a href="{{ url_for('line_tracking') }}" class="btn btn-success btn-large">Line Tracking</a>
+      <a href="{{ url_for('obstacle_avoidance') }}" class="btn btn-warning btn-large">Obstacle Avoid</a>
+    </div>
+  </div>
+</div>
+{% endblock %} 
+
+{% block scripts %}
+<script>
+  function updateLiveData() {
+    fetch("/api/live-data")
+      .then((response) => response.json())
+      .then((data) => {
+        // Update ultrasonic
+        if (data.ultrasonic_cm !== null && data.ultrasonic_cm !== undefined) {
+          document.getElementById("ultrasonic-value").textContent = parseFloat(data.ultrasonic_cm).toFixed(1);
+          document.getElementById("ultrasonic-update").textContent = "LIVE @ " + new Date().toLocaleTimeString();
+        }
+
+        // Update IR sensors
+        if (data.ir_left !== null && data.ir_left !== undefined) {
+          document.getElementById("ir-left-value").textContent = data.ir_left;
+          document.getElementById("ir-left-update").textContent = "LIVE @ " + new Date().toLocaleTimeString();
+        }
+        if (data.ir_center !== null && data.ir_center !== undefined) {
+          document.getElementById("ir-center-value").textContent = data.ir_center;
+          document.getElementById("ir-center-update").textContent = "LIVE @ " + new Date().toLocaleTimeString();
+        }
+        if (data.ir_right !== null && data.ir_right !== undefined) {
+          document.getElementById("ir-right-value").textContent = data.ir_right;
+          document.getElementById("ir-right-update").textContent = "LIVE @ " + new Date().toLocaleTimeString();
+        }
+
+        // Update line state
+        if (data.line_state !== null && data.line_state !== undefined) {
+          document.getElementById("line-state-value").textContent = data.line_state || "---";
+          document.getElementById("line-state-update").textContent = "LIVE @ " + new Date().toLocaleTimeString();
+        }
+
+        // Update connection status
+        document.getElementById("connection-status").textContent = "ONLINE";
+        document.getElementById("connection-status").className = "status-value status-connected";
+        document.getElementById("last-update").textContent = new Date().toLocaleString();
+      })
+      .catch((error) => {
+        console.error("Error fetching live data:", error);
+        document.getElementById("connection-status").textContent = "OFFLINE";
+        document.getElementById("connection-status").className = "status-value status-disconnected";
+      });
+  }
+
+  // Update immediately and then every 2 seconds
+  updateLiveData();
+  setInterval(updateLiveData, 2000);
+</script>
 {% endblock %}

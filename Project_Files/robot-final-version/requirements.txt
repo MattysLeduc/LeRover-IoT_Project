@@ -4,10 +4,22 @@ paho-mqtt>=1.6,<3.0
 # Date/time utilities for timezone handling
 python-dateutil>=2.8.0
 
-# GUI framework for server application (optional)
-PyQt5>=5.15.0
+# GUI framework for server application (optional - skip if installation fails)
+# PyQt5>=5.15.0  # Commented out - install separately if needed: sudo apt install python3-pyqt5
 
 # GPIO control library for Raspberry Pi
 gpiozero>=1.6.0
+
+# Flask web framework
+Flask>=3.0.0
+
+# HTTP requests for Adafruit IO
+requests>=2.31.0
+
+# Database drivers
+psycopg2-binary>=2.9.0  # PostgreSQL for Neon.com
+
+# NumPy for LED pixel driver (SPI)
+numpy>=1.24.0
 
 

@@ -1,16 +1,35 @@
-from gpiozero import DistanceSensor, PWMSoftwareFallback, DistanceSensorNoEcho
-import warnings
+"""
+Ultrasonic sensor driver using RPi.GPIO (more reliable than gpiozero)
+"""
+import RPi.GPIO as GPIO
 import time
+import warnings
 
 class Ultrasonic:
     def __init__(self, trigger_pin: int = 27, echo_pin: int = 22, max_distance: float = 3.0):
-        # Initialize the Ultrasonic class and set up the distance sensor.
-        warnings.filterwarnings("ignore", category = DistanceSensorNoEcho)
-        warnings.filterwarnings("ignore", category = PWMSoftwareFallback)  # Ignore PWM software fallback warnings
-        self.trigger_pin = trigger_pin  # Set the trigger pin number
-        self.echo_pin = echo_pin        # Set the echo pin number
-        self.max_distance = max_distance  # Set the maximum distance
-        self.sensor = DistanceSensor(echo=self.echo_pin, trigger=self.trigger_pin, max_distance=self.max_distance)  # Initialize the distance sensor
+        """Initialize ultrasonic sensor using RPi.GPIO"""
+        self.trigger_pin = trigger_pin
+        self.echo_pin = echo_pin
+        self.max_distance = max_distance  # meters
+        self.max_distance_cm = max_distance * 100  # centimeters
+        
+        # Suppress GPIO warnings
+        GPIO.setwarnings(False)
+        
+        # Setup GPIO
+        try:
+            GPIO.setmode(GPIO.BCM)
+        except:
+            pass  # Mode might already be set
+        
+        GPIO.setup(self.trigger_pin, GPIO.OUT)
+        GPIO.setup(self.echo_pin, GPIO.IN)
+        
+        # Initialize trigger to LOW
+        GPIO.output(self.trigger_pin, GPIO.LOW)
+        time.sleep(0.1)
+        
+        print(f"[ultrasonic] Initialized using RPi.GPIO (trigger={trigger_pin}, echo={echo_pin})")
 
     def __enter__(self):
         return self
@@ -21,29 +40,67 @@ class Ultrasonic:
     def get_distance(self) -> float:
         """
         Get the distance measurement from the ultrasonic sensor.
-
+        
         Returns:
-        float: The distance measurement in centimeters, rounded to one decimal place.
+            float: Distance in centimeters, or None if measurement failed
         """
         try:
-            distance = self.sensor.distance * 100  # Get the distance in centimeters
-            return round(float(distance), 1)  # Return the distance rounded to one decimal place
-        except RuntimeWarning as e:
-            print(f"Warning: {e}")
+            # Send trigger pulse
+            GPIO.output(self.trigger_pin, GPIO.LOW)
+            time.sleep(0.02)  # 20ms settle time
+            GPIO.output(self.trigger_pin, GPIO.HIGH)
+            time.sleep(0.00001)  # 10us pulse
+            GPIO.output(self.trigger_pin, GPIO.LOW)
+            
+            # Wait for echo to start (timeout after 100ms)
+            timeout_start = time.time()
+            while GPIO.input(self.echo_pin) == 0:
+                pulse_start = time.time()
+                if pulse_start - timeout_start > 0.1:
+                    return None  # Timeout
+            
+            # Wait for echo to end (timeout after 100ms)
+            while GPIO.input(self.echo_pin) == 1:
+                pulse_end = time.time()
+                if pulse_end - pulse_start > 0.1:
+                    return None  # Timeout
+            
+            # Calculate distance
+            # Speed of sound = 34300 cm/s
+            # Distance = (time * speed) / 2 (round trip)
+            pulse_duration = pulse_end - pulse_start
+            distance = (pulse_duration * 34300) / 2
+            
+            # Clamp to max distance
+            if distance > self.max_distance_cm:
+                return self.max_distance_cm
+            
+            return round(distance, 1)
+            
+        except Exception as e:
             return None
 
     def close(self):
-        # Close the distance sensor.
-        self.sensor.close()  # Close the sensor to release resources
+        """Clean up GPIO pins"""
+        try:
+            # Don't do full cleanup as it might affect other GPIO users
+            # Just set trigger to LOW
+            GPIO.output(self.trigger_pin, GPIO.LOW)
+        except:
+            pass
+
 
 if __name__ == '__main__':
-    # Initialize the Ultrasonic instance with default pin numbers and max distance
+    # Test the ultrasonic sensor
     with Ultrasonic() as ultrasonic:
         try:
+            print("Testing ultrasonic sensor... (Ctrl+C to stop)")
             while True:
-                distance = ultrasonic.get_distance()  # Get the distance measurement in centimeters
+                distance = ultrasonic.get_distance()
                 if distance is not None:
-                    print(f"Ultrasonic distance: {distance}cm")  # Print the distance measurement
-                time.sleep(0.5)  # Wait for 0.5 seconds
-        except KeyboardInterrupt:  # Handle keyboard interrupt (Ctrl+C)
-            print("\nEnd of program")  # Print an end message
+                    print(f"Distance: {distance} cm")
+                else:
+                    print("Distance: -- (no reading)")
+                time.sleep(0.5)
+        except KeyboardInterrupt:
+            print("\nTest ended")

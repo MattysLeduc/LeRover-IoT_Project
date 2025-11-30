@@ -3,7 +3,11 @@ import json, os, sys, datetime
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
-CFG_PATH = BASE / "adafruit.json"
+# Look for config in config/ directory (parent of src/)
+CFG_PATH = BASE.parent.parent / "config" / "adafruit.json"
+# Fallback to src/telemetry/ if not found
+if not CFG_PATH.exists():
+    CFG_PATH = BASE / "adafruit.json"
 
 # Load your real runtime config (kept out of git)
 cfg = json.load(open(CFG_PATH))
@@ -37,3 +41,11 @@ if __name__ == "__main__":
     spec = importlib.util.spec_from_file_location("telemetry", str(BASE / "telemetry.py"))
     telem = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(telem)
+    
+    # Actually start the telemetry loop (since __name__ != "__main__" when imported)
+    if hasattr(telem, "Telemetry"):
+        print(f"[telemetry-runner] Starting telemetry with config: {CFG_PATH}")
+        telem.Telemetry(cfg).loop()
+    else:
+        print("[telemetry-runner] Error: Telemetry class not found in telemetry.py", file=sys.stderr)
+        sys.exit(1)

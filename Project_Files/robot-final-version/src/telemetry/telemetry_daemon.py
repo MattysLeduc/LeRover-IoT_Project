@@ -3,8 +3,17 @@ import os, sys, json, time, csv, signal, base64
 from pathlib import Path
 from datetime import datetime, timezone
 from dateutil import tz
-from db import local_db
 import paho.mqtt.client as mqtt
+
+# Import database sync functions
+BASE_PARENT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(BASE_PARENT / "src"))
+try:
+    from database_sync import save_to_local_db, sync_to_cloud, check_internet, init_local_db
+    DB_AVAILABLE = True
+except ImportError:
+    DB_AVAILABLE = False
+    print("[warning] database_sync module not available, database features disabled", file=sys.stderr)
 
 BASE = Path(__file__).resolve().parent.parent   # repo/
 CFG_DIR = BASE / "config"
@@ -172,6 +181,11 @@ def main():
     tzname = app.get("timezone", "America/Toronto")
     csvlog = DailyCSV(tzname)
 
+    # Initialize database if available
+    if DB_AVAILABLE:
+        init_local_db()
+        print("[telemetry-daemon] database initialized (local SQLite + cloud sync)")
+
     # intervals (seconds)
     itv = app.get("intervals", {})
     dt_us = float(itv.get("ultrasonic_sec", 0.5))
@@ -180,7 +194,7 @@ def main():
 
     pub = AIOPublisher(user, key, feeds, host=host, port=port)
 
-    t_us = t_ir = t_cam = 0.0
+    t_us = t_ir = t_cam = t_sync = 0.0
     print("[telemetry-daemon] running (cache-only). Ctrl+C to stop.")
     try:
         while RUN:
@@ -192,7 +206,12 @@ def main():
                 t_us = now
                 d = read_ultra_cm()
                 if d is not None:
+                    # Send to Adafruit IO
                     pub.pub("ultrasonic_cm", f"{d:.1f}")
+                    # Save to local database (will sync to cloud later)
+                    if DB_AVAILABLE:
+                        timestamp = now_local.isoformat()
+                        save_to_local_db(timestamp=timestamp, ultrasonic=float(d))
                 # include in CSV either way (None becomes blank)
 
             # Infrared + line state (from line_follow / cache-writer)
@@ -203,6 +222,7 @@ def main():
                 state = read_line_state()
                 if ir:
                     L, M, R = ir
+                    # Send to Adafruit IO
                     pub.pub("ir_left",   L)
                     pub.pub("ir_center", M)
                     pub.pub("ir_right",  R)
@@ -214,13 +234,30 @@ def main():
                 # Log row (1 Hz is fine; here we log on each IR tick)
                 d = read_ultra_cm()
                 csvlog.log(now_local, d, L, M, R, state)
-                now_utc = datetime.now(timezone.utc)
-                insert_row(now_utc, d, L, M, R, state)
+                
+                # Save to local database (will sync to cloud later)
+                if DB_AVAILABLE:
+                    timestamp = now_local.isoformat()
+                    save_to_local_db(
+                        timestamp=timestamp,
+                        ultrasonic=float(d) if d is not None else None,
+                        ir_left=int(L) if L is not None else None,
+                        ir_center=int(M) if M is not None else None,
+                        ir_right=int(R) if R is not None else None,
+                        line_state=state if state else None
+                    )
 
             # Camera status heartbeat (we don't access camera here; car_tui owns it)
             if now - t_cam >= dt_cam:
                 t_cam = now
                 pub.pub("camera_status", "idle")  # cache-only daemon can't access camera
+
+            # Sync local database to cloud every 5 minutes (300 seconds)
+            if DB_AVAILABLE and (now - t_sync >= 300):
+                t_sync = now
+                if check_internet():
+                    sync_to_cloud()
+                    print("[telemetry-daemon] synced local database to cloud", file=sys.stderr)
 
             time.sleep(0.02)
     finally:

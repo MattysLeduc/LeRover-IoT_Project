@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
-import os, json, time, base64, datetime, csv, ssl
+import os, json, time, base64, datetime, csv, ssl, sys
 from pathlib import Path
 from typing import Optional
 import paho.mqtt.client as mqtt
 
 BASE = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE.parent.parent  # Go up to project root
+
+# Import database sync functions
+try:
+    import sys
+    sys.path.insert(0, str(BASE.parent))
+    from database_sync import save_to_local_db, sync_to_cloud, check_internet, init_local_db
+    DB_AVAILABLE = True
+except ImportError:
+    DB_AVAILABLE = False
 
 # Cache files written by car_tui.py and line_follow.py
 IR_CACHE    = Path("/tmp/ir_lmr.txt")     # "L M R" as three ints
@@ -21,7 +31,18 @@ except Exception:
 def now_iso(): return datetime.datetime.now().isoformat(timespec="seconds")
 
 def load_cfg():
-    cfg = json.loads((BASE/"adafruit.json").read_text())
+    # Check for environment override first (set by telemetry_runner.py)
+    override_path = os.environ.get("AIO_CFG_OVERRIDE")
+    if override_path and Path(override_path).exists():
+        cfg = json.loads(Path(override_path).read_text())
+    else:
+        # Try config/adafruit.json in project root
+        config_path = PROJECT_ROOT / "config" / "adafruit.json"
+        if config_path.exists():
+            cfg = json.loads(config_path.read_text())
+        else:
+            # Fallback to old location
+            cfg = json.loads((BASE/"adafruit.json").read_text())
     a = cfg["adafruit"] if "adafruit" in cfg else cfg
     username = a.get("username") or a.get("user")
     key      = a.get("key") or a.get("aio_key")
@@ -170,10 +191,16 @@ class Telemetry:
         self.dt_ir  = intervals["infrared_sec"]
         self.dt_us  = intervals["ultrasonic_sec"]
         self.dt_cam = intervals["camera_sec"]
-        self.t_ir = self.t_us = self.t_cam = 0.0
+        self.t_ir = self.t_us = self.t_cam = self.t_sync = 0.0
+        self.last_ultrasonic = None  # Keep last known ultrasonic value
         self.cam = CamReader() if (os.environ.get("TELEM_SKIP_CAM") != "1") else None
         self.log = CsvLogger(BASE / log_cfg.get("path","logs/telemetry.csv")) if log_cfg.get("enabled",True) else None
         self.stop = False
+        
+        # Initialize database if available
+        if DB_AVAILABLE:
+            init_local_db()
+            print("[telemetry] database initialized (local SQLite + cloud sync)")
 
     def loop(self):
         print("[telemetry] (cache-only, TLS) started. Ctrl+C to stop.")
@@ -186,6 +213,7 @@ class Telemetry:
                     self.t_us = t
                     d = read_ultra_cached()
                     if d is not None:
+                        self.last_ultrasonic = float(d)  # Store last known value
                         self.pub.pub(self.feeds["ultrasonic_cm"], f"{d:.1f}")
 
                 # Infrared from cache
@@ -199,7 +227,20 @@ class Telemetry:
                         self.pub.pub(self.feeds["ir_right"],  R)
                         line_state = f"{'L' if L else '_'}{'M' if M else '_'}{'R' if R else '_'}"
                         self.pub.pub(self.feeds["line_state"], line_state)
-
+                        # Save to local database with both IR and ultrasonic (use last known ultrasonic)
+                        if DB_AVAILABLE:
+                            timestamp = datetime.datetime.now().isoformat()
+                            # Use last known ultrasonic value if available
+                            d = read_ultra_cached() or self.last_ultrasonic
+                            save_to_local_db(
+                                timestamp=timestamp,
+                                ultrasonic=float(d) if d is not None else None,
+                                ir_left=int(L) if L is not None else None,
+                                ir_center=int(M) if M is not None else None,
+                                ir_right=int(R) if R is not None else None,
+                                line_state=line_state if line_state else None
+                            )
+                
                 # Camera (optional, non-GPIO)
                 if t - self.t_cam >= self.dt_cam:
                     self.t_cam = t
@@ -218,6 +259,18 @@ class Telemetry:
                     else: L=M=R=""; line_state="___"
                     self.log.log(d, L, M, R, line_state, (self.cam.status() if self.cam else "offline"))
 
+                # Sync local database to cloud every 30 seconds (faster updates)
+                if DB_AVAILABLE and (t - self.t_sync >= 30):
+                    self.t_sync = t
+                    if check_internet():
+                        result = sync_to_cloud()
+                        if result:
+                            print(f"[telemetry] synced local database to cloud at {datetime.datetime.now().strftime('%H:%M:%S')}", file=sys.stderr)
+                        else:
+                            print(f"[telemetry] WARNING: cloud sync failed at {datetime.datetime.now().strftime('%H:%M:%S')}", file=sys.stderr)
+                    else:
+                        print("[telemetry] No internet connection, skipping cloud sync", file=sys.stderr)
+
                 time.sleep(0.05)
         except KeyboardInterrupt:
             print("\n[telemetry] stopping…")
@@ -227,5 +280,11 @@ class Telemetry:
             self.pub.close()
 
 if __name__ == "__main__":
-    cfg = json.load(open(BASE/"adafruit.json"))
+    # Load config from project root
+    config_path = PROJECT_ROOT / "config" / "adafruit.json"
+    if config_path.exists():
+        cfg = json.load(open(config_path))
+    else:
+        # Fallback to old location
+        cfg = json.load(open(BASE/"adafruit.json"))
     Telemetry(cfg).loop()

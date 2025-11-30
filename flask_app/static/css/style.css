@@ -1,0 +1,785 @@
+/* IoT Smart Robot Car - Cyberpunk Neon Theme */
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --neon-cyan: #00f5ff;
+  --neon-pink: #ff00ff;
+  --neon-green: #39ff14;
+  --neon-orange: #ff6b35;
+  --neon-purple: #bf00ff;
+  --dark-bg: #0a0a0f;
+  --card-bg: rgba(15, 15, 25, 0.9);
+  --card-border: rgba(0, 245, 255, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #8892b0;
+  --danger: #ff3860;
+  --success: #00d1b2;
+}
+
+body {
+  font-family: "Rajdhani", sans-serif;
+  background: var(--dark-bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Animated Background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+      ellipse at 20% 80%,
+      rgba(0, 245, 255, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 20%,
+      rgba(255, 0, 255, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(57, 255, 20, 0.05) 0%,
+      transparent 70%
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Grid overlay */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(
+      rgba(0, 245, 255, 0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Navigation */
+.navbar {
+  background: linear-gradient(
+    180deg,
+    rgba(10, 10, 15, 0.98) 0%,
+    rgba(10, 10, 15, 0.9) 100%
+  );
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--card-border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(20px);
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo h1 {
+  font-family: "Orbitron", monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+  letter-spacing: 2px;
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  font-family: "Orbitron", monospace;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid transparent;
+}
+
+.nav-link:hover {
+  color: var(--neon-cyan);
+  border-color: var(--neon-cyan);
+  background: rgba(0, 245, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3),
+    inset 0 0 20px rgba(0, 245, 255, 0.1);
+}
+
+/* Main Content */
+.main-content {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+.container {
+  width: 100%;
+}
+
+.page-title {
+  font-family: "Orbitron", monospace;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--card-border);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--neon-cyan),
+    transparent
+  );
+}
+
+.card:hover {
+  border-color: rgba(0, 245, 255, 0.4);
+  box-shadow: 0 0 30px rgba(0, 245, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-header h2,
+.card-header h3 {
+  font-family: "Orbitron", monospace;
+  color: var(--neon-cyan);
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.card-body {
+  padding: 0.5rem 0;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.sensor-value {
+  font-family: "Orbitron", monospace;
+  font-size: 3.5rem;
+  font-weight: 800;
+  text-align: center;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(0, 245, 255, 0.5);
+}
+
+.sensor-unit {
+  font-family: "Orbitron", monospace;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.sensor-update {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.5rem;
+  opacity: 0.7;
+}
+
+.status-card {
+  grid-column: span 2;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+}
+
+.status-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.status-value {
+  font-family: "Orbitron", monospace;
+  font-weight: 600;
+}
+
+.status-connected {
+  color: var(--neon-green);
+  text-shadow: 0 0 10px var(--neon-green);
+}
+
+.status-disconnected {
+  color: var(--danger);
+  text-shadow: 0 0 10px var(--danger);
+}
+
+/* Buttons */
+.btn {
+  font-family: "Orbitron", monospace;
+  padding: 0.8rem 1.8rem;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: transparent;
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.btn-primary:hover {
+  background: var(--neon-cyan);
+  color: var(--dark-bg);
+  box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+}
+
+.btn-secondary:hover {
+  background: var(--neon-pink);
+  color: var(--dark-bg);
+  box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+}
+
+.btn-success {
+  background: transparent;
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+}
+
+.btn-success:hover {
+  background: var(--neon-green);
+  color: var(--dark-bg);
+  box-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: white;
+  box-shadow: 0 0 30px rgba(255, 56, 96, 0.5);
+}
+
+.btn-warning {
+  background: transparent;
+  border-color: var(--neon-orange);
+  color: var(--neon-orange);
+}
+
+.btn-warning:hover {
+  background: var(--neon-orange);
+  color: var(--dark-bg);
+  box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+}
+
+.btn-large {
+  padding: 1.2rem 2.5rem;
+  font-size: 1.1rem;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Quick Actions */
+.quick-actions {
+  margin-top: 3rem;
+}
+
+.quick-actions h2 {
+  font-family: "Orbitron", monospace;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Motor Control */
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  max-width: 450px;
+  margin: 2rem auto;
+}
+
+.btn-control {
+  padding: 1.5rem;
+  font-size: 1.5rem;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-up {
+  grid-column: 2;
+}
+.btn-down {
+  grid-column: 2;
+}
+.btn-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+.btn-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+.btn-stop {
+  grid-column: 2;
+  grid-row: 2;
+  background: var(--danger);
+  border-color: var(--danger);
+  color: white;
+}
+.btn-stop:hover {
+  background: #ff1744;
+  box-shadow: 0 0 40px rgba(255, 56, 96, 0.6);
+}
+
+/* Device Controls */
+.device-controls {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.device-item {
+  flex: 1;
+  min-width: 200px;
+  text-align: center;
+}
+
+.device-item h3 {
+  font-family: "Orbitron", monospace;
+  margin-bottom: 1rem;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.device-item .btn {
+  margin: 0.3rem;
+}
+
+/* Charts */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.charts-grid .card-body {
+  height: 300px;
+  position: relative;
+}
+
+/* Date Selector */
+.date-selector {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.date-selector label {
+  font-family: "Orbitron", monospace;
+  font-weight: 600;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.date-selector input[type="date"] {
+  font-family: "Rajdhani", sans-serif;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  border: 2px solid var(--card-border);
+  background: var(--dark-bg);
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.date-selector input[type="date"]:focus {
+  border-color: var(--neon-cyan);
+  outline: none;
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+}
+
+/* Algorithm Controls */
+.algorithm-controls {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.status-light {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--danger);
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px var(--danger);
+}
+
+.status-light.active {
+  background: var(--neon-green);
+  box-shadow: 0 0 20px var(--neon-green), 0 0 40px var(--neon-green);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Line State Display */
+.line-state-display {
+  font-family: "Orbitron", monospace;
+  font-size: 5rem;
+  text-align: center;
+  font-weight: 800;
+  margin: 1.5rem 0;
+  background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.line-state-update {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Distance Display */
+.distance-display {
+  font-family: "Orbitron", monospace;
+  font-size: 6rem;
+  text-align: center;
+  font-weight: 800;
+  margin: 1rem 0;
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.distance-unit {
+  font-family: "Orbitron", monospace;
+  text-align: center;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 5px;
+}
+
+.distance-update {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+/* Status Message */
+.status-message {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-family: "Orbitron", monospace;
+  font-weight: 600;
+  z-index: 1000;
+  transition: all 0.3s;
+  opacity: 0;
+  transform: translateY(20px);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-message.success {
+  background: var(--neon-green);
+  color: var(--dark-bg);
+  opacity: 1;
+  transform: translateY(0);
+  box-shadow: 0 0 30px var(--neon-green);
+}
+
+.status-message.error {
+  background: var(--danger);
+  color: white;
+  opacity: 1;
+  transform: translateY(0);
+  box-shadow: 0 0 30px var(--danger);
+}
+
+/* About Page */
+.about-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.about-content .card {
+  margin-bottom: 2rem;
+}
+
+.about-content p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.about-content ul {
+  list-style: none;
+  margin-top: 1rem;
+}
+
+.about-content li {
+  margin: 0.8rem 0;
+  color: var(--text-secondary);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.about-content li::before {
+  content: "▹";
+  position: absolute;
+  left: 0;
+  color: var(--neon-cyan);
+}
+
+/* Footer */
+.footer {
+  background: rgba(10, 10, 15, 0.95);
+  text-align: center;
+  padding: 2rem;
+  margin-top: 4rem;
+  border-top: 1px solid var(--card-border);
+}
+
+.footer p {
+  font-family: "Orbitron", monospace;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neon-cyan);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-pink);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-menu {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-link {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.8rem;
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-card {
+    grid-column: span 1;
+  }
+
+  .control-grid {
+    max-width: 100%;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .device-controls {
+    flex-direction: column;
+  }
+
+  .sensor-value {
+    font-size: 2.5rem;
+  }
+
+  .distance-display {
+    font-size: 4rem;
+  }
+
+  .line-state-display {
+    font-size: 3.5rem;
+  }
+}

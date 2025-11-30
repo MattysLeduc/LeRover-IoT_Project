@@ -1,17 +1,123 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>Line Tracking Mode</h1>
+{% extends "base.html" %} {% block title %}Line Tracking - YVLSWITCH{%
+endblock %} {% block content %}
+<div class="container">
+  <h1 class="page-title">Line Tracking</h1>
 
-<button onclick="send('start')">Start Line Tracking</button>
-<button onclick="send('stop')">Stop Line Tracking</button>
+  <div class="card">
+    <div class="card-header">
+      <h2>Line Following Algorithm</h2>
+    </div>
+    <div class="card-body">
+      <p>
+        The line following algorithm uses IR sensors to detect and follow a line
+        on the ground.
+      </p>
 
+      <div class="algorithm-controls">
+        <button
+          class="btn btn-success btn-large"
+          id="start-btn"
+          onclick="startLineTracking()"
+        >
+          ▶ Start Line Tracking
+        </button>
+        <button
+          class="btn btn-danger btn-large"
+          id="stop-btn"
+          onclick="stopLineTracking()"
+          disabled
+        >
+          ⏹ Stop Line Tracking
+        </button>
+      </div>
+
+      <div class="status-indicator">
+        <div class="status-light" id="status-light"></div>
+        <span id="status-text">Stopped</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Current Line State</h2>
+    </div>
+    <div class="card-body">
+      <div class="line-state-display" id="line-state-display">---</div>
+      <div class="line-state-update" id="line-state-update">
+        Waiting for data...
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
 <script>
-function send(cmd) {
-    fetch("/line-command", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({command: cmd})
-    });
-}
+  let isRunning = false;
+
+  function startLineTracking() {
+    fetch("/api/line-tracking/start", {
+      method: "POST",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          isRunning = true;
+          document.getElementById("start-btn").disabled = true;
+          document.getElementById("stop-btn").disabled = false;
+          document.getElementById("status-light").className =
+            "status-light active";
+          document.getElementById("status-text").textContent = "Running";
+        } else {
+          alert("Failed to start line tracking");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Error starting line tracking");
+      });
+  }
+
+  function stopLineTracking() {
+    fetch("/api/line-tracking/stop", {
+      method: "POST",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          isRunning = false;
+          document.getElementById("start-btn").disabled = false;
+          document.getElementById("stop-btn").disabled = true;
+          document.getElementById("status-light").className = "status-light";
+          document.getElementById("status-text").textContent = "Stopped";
+        } else {
+          alert("Failed to stop line tracking");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Error stopping line tracking");
+      });
+  }
+
+  // Update line state display
+  function updateLineState() {
+    fetch("/api/live-data")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.line_state !== null) {
+          document.getElementById("line-state-display").textContent =
+            data.line_state;
+          document.getElementById("line-state-update").textContent =
+            "Last update: " + new Date().toLocaleTimeString();
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching line state:", error);
+      });
+  }
+
+  // Update line state every 2 seconds
+  setInterval(updateLineState, 2000);
+  updateLineState();
 </script>
 {% endblock %}

@@ -1,34 +1,49 @@
 #!/usr/bin/env python3
-import curses, time, subprocess, os, signal, threading, json
+# Amine Baha (2332522) — car_tui.py (direct SPI LED, nested-driver first)
+
+import curses, time, subprocess, os, signal, threading, json, sys
 from pathlib import Path
 from typing import Optional
 
-# -----------------------------------------------------------------------------
-# Safe hardware wrappers
-# -----------------------------------------------------------------------------
+BASE = os.path.dirname(__file__)
+PY   = "/usr/bin/python3"
+LF   = os.path.join(BASE, "line_follow.py")
+OBS  = os.path.join(BASE, "obstacle_navigator.py")
+
+IR_CACHE    = Path("/tmp/ir_lmr.txt")
+ULTRA_CACHE = Path("/tmp/ultra_cm.txt")
+LINE_STATE  = Path("/tmp/line_state.txt")
+
+def _clear_caches():
+    for p in (IR_CACHE, ULTRA_CACHE, LINE_STATE):
+        try: p.unlink(missing_ok=True)
+        except Exception: pass
+
+# ---------------- Car (motors) ----------------
 car = None
 try:
     from hardware.motor import Ordinary_Car
     car = Ordinary_Car()
-except Exception:
+except Exception as e:
+    print(f"[MOTOR] Failed to load: {e}", file=sys.stderr)
     car = None
 
+# ---------------- Buzzer ----------------
 class SmartBuzzer:
     def __init__(self):
         self.b = None
         try:
             from hardware.buzzer import Buzzer
             self.b = Buzzer()
-        except Exception:
+        except Exception as e:
+            print(f"[BUZZER] Failed to load: {e}", file=sys.stderr)
             self.b = None
     def _call(self, name, *a):
         if not self.b: return False
         f = getattr(self.b, name, None)
         if callable(f):
-            try:
-                f(*a); return True
-            except Exception:
-                return False
+            try: f(*a); return True
+            except Exception: return False
         return False
     def start(self): return self._call("set_state", 1)
     def stop(self):  self._call("set_state", 0)
@@ -41,58 +56,76 @@ class SmartBuzzer:
 
 buzzer = SmartBuzzer()
 
+# ---------------- LEDs (DIRECT SPI, nested module first) ----------------
 class SmartLED:
     def __init__(self):
         self.impl = None
-        self.count = 8
-        self.mask  = 0xFF
+        self.driver_path = "?"
+        # defaults (env)
+        self.count    = int(os.environ.get("LED_COUNT", "60"))
+        self.bright   = int(os.environ.get("LED_BRIGHT", "120"))
+        self.sequence = os.environ.get("LED_SEQUENCE", "GRB")
+        # params.json overrides (check parent directory first, then current)
         try:
-            # params.json optional - check config/ first
+            params_path = os.path.join(os.path.dirname(BASE), "params.json")
+            if not os.path.exists(params_path):
+                params_path = os.path.join(BASE, "params.json")
+            cfg = json.load(open(params_path))
+            self.count    = int(cfg.get("Led_Count", self.count))
+            self.bright   = int(cfg.get("Led_Brightness", cfg.get("Led_Bright", self.bright)))
+            self.sequence = str(cfg.get("Led_Sequence", self.sequence))
+        except Exception:
+            pass
+        if self.count < 1: self.count = 60
+
+        LED = None
+        # Prefer nested driver (this is the one your tests used)
+        try:
+            from repo.src.Server.spi_ledpixel import Freenove_SPI_LedPixel as LED
+            import repo.src.Server.spi_ledpixel as mod
+            self.driver_path = getattr(mod, "__file__", "repo/src/Server/spi_ledpixel.py")
+        except Exception:
+            # fallback to hardware module
             try:
-                config_path = Path(__file__).parent.parent / "config" / "params.json"
-                if not config_path.exists():
-                    config_path = Path(__file__).parent / "params.json"
-                if config_path.exists():
-                    cfg = json.load(open(config_path))
-                    self.count = int(cfg.get("Led_Count", 8))
-                    self.mask  = int(str(cfg.get("Led_Mask", "0xFF")), 16)
+                from hardware.spi_ledpixel import Freenove_SPI_LedPixel as LED
+                import hardware.spi_ledpixel as mod
+                self.driver_path = getattr(mod, "__file__", "hardware/spi_ledpixel.py")
             except Exception:
-                pass
-            from hardware.led import Led
-            L = Led()
-            self.impl = getattr(L, "strip", None) or L
-            set_cnt = getattr(self.impl, "set_led_count", None)
-            if callable(set_cnt): set_cnt(self.count)
+                # fallback to top-level
+                try:
+                    from spi_ledpixel import Freenove_SPI_LedPixel as LED
+                    import spi_ledpixel as mod
+                    self.driver_path = getattr(mod, "__file__", "spi_ledpixel.py")
+                except Exception:
+                    LED = None
+
+        if LED is not None:
+            try:
+                self.impl = LED(count=self.count, bright=self.bright, sequence=self.sequence, bus=0, device=0)
+                self.impl.led_begin(bus=0, device=0)
+                self.impl.set_led_count(self.count)
+                self.set_all(0,0,0)
         except Exception:
             self.impl = None
-    def _show(self):
-        if not self.impl: return
-        try: self.impl.show()
-        except TypeError:
-            try: self.impl.show(4)
-            except Exception: pass
-    def _set_pixel(self, idx, r, g, b):
+
+    def set_all(self, r, g, b):
         if not self.impl: return
         try:
-            self.impl.set_led_color_data(int(idx), int(r), int(g), int(b))
+            self.impl.set_all_led_color(int(r), int(g), int(b))
         except Exception:
-            f = getattr(self.impl, "ledIndex", None)
-            if callable(f): f(1<<idx, int(r), int(g), int(b))
-    def set_all(self, r, g, b):
-        for i in range(self.count):
-            if (self.mask >> i) & 1:
-                self._set_pixel(i, r, g, b)
-            else:
-                self._set_pixel(i, 0, 0, 0)
-        self._show()
+            pass
+
     def off(self): self.set_all(0,0,0)
-    def on_white(self, brightness=255):
+    def on_white(self, brightness=200):
         v = max(0, min(255, int(brightness)))
         self.set_all(v, v, v)
 
+    def info(self) -> str:
+        return f"{self.count} px, {self.sequence}, bright={self.bright}, driver={self.driver_path}"
+
 leds = SmartLED()
 
-# Servos (optional)
+# ---------------- Servos (pan/tilt) ----------------
 pan = tilt = None
 try:
     from hardware.servo import Servo
@@ -108,34 +141,20 @@ try:
         raise RuntimeError("No supported servo setter")
     set_servo_angle("0", 90); set_servo_angle("1", 90)
     pan = object(); tilt = object()
-except Exception:
+except Exception as e:
+    print(f"[SERVO] Failed to load: {e}", file=sys.stderr)
     pan = tilt = None
 
-# Ultrasonic (lazy)
+# ---------------- Ultrasonic ----------------
 Ultrasonic = None
 try:
     from hardware.ultrasonic import Ultrasonic as _U
     Ultrasonic = _U
-except Exception:
+except Exception as e:
+    print(f"[ULTRASONIC] Failed to load: {e}", file=sys.stderr)
     Ultrasonic = None
 
-BASE = os.path.dirname(__file__)
-PY   = "/usr/bin/python3"
-LF   = os.path.join(BASE, "line_follow.py")
-OBS  = os.path.join(BASE, "obstacle_navigator.py")
-
-# Cache paths (shared with telemetry)
-IR_CACHE    = Path("/tmp/ir_lmr.txt")        # written by line_follow.py
-ULTRA_CACHE = Path("/tmp/ultra_cm.txt")      # written here
-LINE_STATE  = Path("/tmp/line_state.txt")    # optional helper
-def _clear_caches():
-    for p in (IR_CACHE, ULTRA_CACHE, LINE_STATE):
-        try: p.unlink(missing_ok=True)
-        except Exception: pass
-
-# -----------------------------------------------------------------------------
-# Process management
-# -----------------------------------------------------------------------------
+# ---------------- Process mgmt ----------------
 procs = {"lf": None, "obs": None}
 def _is_running(p: Optional[subprocess.Popen]) -> bool: return bool(p and p.poll() is None)
 def _pgid(p: subprocess.Popen) -> Optional[int]:
@@ -162,8 +181,7 @@ def kill_proc(key: str):
         try: p.wait(timeout=1.0)
         except Exception: pass
     procs[key] = None
-def _popen_group(args):
-    return subprocess.Popen(args, preexec_fn=os.setsid, stdout=None, stderr=None)
+def _popen_group(args): return subprocess.Popen(args, preexec_fn=os.setsid, stdout=None, stderr=None)
 def start_line_follow():
     kill_proc("obs")
     args=[PY, LF, "--invert-drive","--invert-steer","--debug",
@@ -178,28 +196,15 @@ def start_obs_nav():
     kill_proc("obs"); procs["obs"]=_popen_group([PY, OBS])
 def stop_obs_nav(): kill_proc("obs")
 
-# -----------------------------------------------------------------------------
-# Drive helpers
-# -----------------------------------------------------------------------------
+# ---------------- Drive helpers ----------------
 speed=800; turn_power=1200; drive_sign=-1
-def drive_stop():
-    if car: car.set_motor_model(0,0,0,0)
-def drive_forward():
-    if car:
-        p=int(speed)*drive_sign; car.set_motor_model(p,p,p,p)
-def drive_backward():
-    if car:
-        p=int(speed)*drive_sign; car.set_motor_model(-p,-p,-p,-p)
-def turn_left():
-    if car:
-        pw=int(turn_power)*drive_sign; car.set_motor_model(-pw,-pw,+pw,+pw)
-def turn_right():
-    if car:
-        pw=int(turn_power)*drive_sign; car.set_motor_model(+pw,+pw,-pw,-pw)
+def drive_stop():      car and car.set_motor_model(0,0,0,0)
+def drive_forward():   car and car.set_motor_model(int(speed)*drive_sign, int(speed)*drive_sign, int(speed)*drive_sign, int(speed)*drive_sign)
+def drive_backward():  car and car.set_motor_model(-int(speed)*drive_sign, -int(speed)*drive_sign, -int(speed)*drive_sign, -int(speed)*drive_sign)
+def turn_left():       car and car.set_motor_model(-int(turn_power)*drive_sign, -int(turn_power)*drive_sign, +int(turn_power)*drive_sign, +int(turn_power)*drive_sign)
+def turn_right():      car and car.set_motor_model(+int(turn_power)*drive_sign, +int(turn_power)*drive_sign, -int(turn_power)*drive_sign, -int(turn_power)*drive_sign)
 
-# -----------------------------------------------------------------------------
-# Ultrasonic background (writes ULTRA_CACHE)
-# -----------------------------------------------------------------------------
+# ---------------- Ultrasonic worker ----------------
 _ultra=None; _ultra_val=None; _ultra_run=False; _want_ultra=False
 def _ultra_loop():
     global _ultra_val,_ultra_run,_ultra
@@ -209,7 +214,6 @@ def _ultra_loop():
             d=_ultra.get_distance() if _ultra else None
             if d is None or d<=0 or d>400: d=None
             _ultra_val=d
-            # cache write (best-effort)
             if d is not None:
                 try: ULTRA_CACHE.write_text(f"{d:.1f}")
                 except Exception: pass
@@ -228,18 +232,15 @@ def ultra_stop(close_device=False):
         except Exception: pass
         _ultra=None
 
-# -----------------------------------------------------------------------------
-# LEDs / Servos helpers
-# -----------------------------------------------------------------------------
+# ---------------- LEDs / Servos helpers ----------------
 _led_on=False
 def leds_toggle():
     global _led_on
     _led_on = not _led_on
     try:
-        if _led_on: leds.on_white(255)
+        if _led_on: leds.on_white(200)
         else:       leds.off()
-    except Exception:
-        pass
+    except Exception: pass
 
 pan_pos=90; tilt_pos=90
 def pan_by(d):
@@ -255,9 +256,7 @@ def tilt_by(d):
     try: set_servo_angle("1", tilt_pos)
     except Exception: pass
 
-# -----------------------------------------------------------------------------
-# UI
-# -----------------------------------------------------------------------------
+# ---------------- UI ----------------
 HELP=[
 "  Controls:",
 "    W  -> forward         S  -> backward         SPACE -> stop",
@@ -267,8 +266,9 @@ HELP=[
 "    L  -> start Line-Follow (tuned defaults)     K     -> stop Line-Follow",
 "    O  -> start Obstacle Navigator               P     -> stop Obstacle Navigator",
 "    U  -> toggle ultrasonic readout              B     -> buzzer",
-"    T  -> toggle LEDs",
+"    T  -> toggle LEDs (white on/off)",
 ]
+
 def _pid_text():
     lf = procs["lf"].pid if _is_running(procs["lf"]) else "-"
     ob = procs["obs"].pid if _is_running(procs["obs"]) else "-"
@@ -277,6 +277,8 @@ def _pid_text():
 def draw(stdscr):
     global speed,turn_power,pan_pos,tilt_pos,_want_ultra
     curses.curs_set(0); stdscr.nodelay(True); stdscr.keypad(True); stdscr.timeout(100)
+    # Show which LED driver loaded
+    print(f"[LED DRIVER] {leds.info()}", file=sys.stderr)
     while True:
         stdscr.erase()
         lf_state=_is_running(procs["lf"]); obs_state=_is_running(procs["obs"])
@@ -317,7 +319,7 @@ def draw(stdscr):
         elif ch in (ord('k'),ord('K')): stop_line_follow()
         elif ch in (ord('o'),ord('O')): start_obs_nav()
         elif ch in (ord('p'),ord('P')): stop_obs_nav()
-    # exit cleanup
+    # cleanup
     try: ultra_stop(close_device=True)
     except Exception: pass
     try: drive_stop()

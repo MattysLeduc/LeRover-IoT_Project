@@ -1,4 +1,8 @@
-import smbus  # Import the smbus module for I2C communication
+try:
+    import smbus  # Import the smbus module for I2C communication
+except ImportError:
+    # Fallback to smbus2 if smbus not available
+    import smbus2 as smbus
 import time  # Import the time module for sleep functionality
 from parameter import ParameterManager  # Import the ParameterManager class from the parameter module
 

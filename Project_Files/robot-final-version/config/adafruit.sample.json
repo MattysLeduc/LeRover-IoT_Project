@@ -9,7 +9,15 @@
       "ir_right": "line-ir-right",
       "line_state": "line-state",
       "camera_status": "cam-status",
-      "camera_thumb": "cam-thumb"
+      "camera_thumb": "cam-thumb",
+      "motor_control": "motor-control",
+      "led_control": "led-control",
+      "buzzer_control": "buzzer-control",
+      "line_tracking": "line-tracking",
+      "obstacle_avoidance": "obstacle-avoidance"
     }
-  }
+  },
+  "capturing_interval": 5,
+  "flushing_interval": 10,
+  "sync_interval": 300
 }

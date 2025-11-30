@@ -1,5 +1,92 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>About the Project</h1>
-<p>This page describes the hardware and architecture used for the IoT Robot Car.</p>
+{% extends "base.html" %} {% block title %}About - YVLSWITCH{% endblock %} {%
+block content %}
+<div class="container">
+  <h1 class="page-title">About System</h1>
+
+  <div class="about-content">
+    <div class="card">
+      <div class="card-header">
+        <h2>◈ Project Information</h2>
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>Course:</strong> 420-N55: IoT - Design and Prototyping of
+          Connected Devices
+        </p>
+        <p><strong>Institution:</strong> Champlain College Saint-Lambert</p>
+        <p><strong>Professor:</strong> Haikel Hichri</p>
+        <p><strong>Semester:</strong> Fall 2025</p>
+        <p><strong>Milestone:</strong> 3 - Complete System Integration</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>◈ System Architecture</h2>
+      </div>
+      <div class="card-body">
+        <p>
+          YVLSWITCH is a fully integrated IoT smart robot car system featuring:
+        </p>
+        <ul>
+          <li>
+            <strong>Raspberry Pi 4:</strong> Main controller running Python 3.11
+          </li>
+          <li>
+            <strong>Ultrasonic Sensor:</strong> HC-SR04 for distance measurement
+            (2cm - 400cm)
+          </li>
+          <li>
+            <strong>IR Line Sensors:</strong> 3-channel array for line detection
+            and tracking
+          </li>
+          <li>
+            <strong>Motor Driver:</strong> 4-wheel DC motor control with PWM
+          </li>
+          <li><strong>LED Array:</strong> Addressable RGB LEDs via SPI</li>
+          <li><strong>Pan/Tilt Servos:</strong> Camera gimbal for scanning</li>
+          <li>
+            <strong>Adafruit IO:</strong> MQTT broker for real-time cloud
+            communication
+          </li>
+          <li>
+            <strong>Neon PostgreSQL:</strong> Cloud database for historical data
+          </li>
+          <li><strong>SQLite:</strong> Local database for offline operation</li>
+          <li><strong>Flask + Chart.js:</strong> Modern web dashboard</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>◈ Features</h2>
+      </div>
+      <div class="card-body">
+        <ul>
+          <li>Real-time sensor data streaming via MQTT</li>
+          <li>Historical data visualization with interactive charts</li>
+          <li>Remote motor control (forward, backward, left, right, stop)</li>
+          <li>Autonomous line following with PD control algorithm</li>
+          <li>Autonomous obstacle avoidance with pan-tilt scanning</li>
+          <li>Offline data caching with automatic cloud sync</li>
+          <li>Device control (LEDs, buzzer) via web interface</li>
+          <li>Responsive cyberpunk-themed UI design</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>◈ Team Members</h2>
+      </div>
+      <div class="card-body">
+        <ul>
+          <li><strong>Amine Baha</strong> - Student ID: 2332522</li>
+          <li><strong>Tamim Afghanyar</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
