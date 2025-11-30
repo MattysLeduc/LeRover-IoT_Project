@@ -1,14 +1,8 @@
 # MQTT client for Adafruit IO communication
 paho-mqtt>=1.6,<3.0
 
-# Date/time utilities for timezone handling
+# Date/time utilities
 python-dateutil>=2.8.0
-
-# GUI framework for server application (optional - skip if installation fails)
-# PyQt5>=5.15.0  # Commented out - install separately if needed: sudo apt install python3-pyqt5
-
-# GPIO control library for Raspberry Pi
-gpiozero>=1.6.0
 
 # Flask web framework
 Flask>=3.0.0
@@ -16,10 +10,17 @@ Flask>=3.0.0
 # HTTP requests for Adafruit IO
 requests>=2.31.0
 
-# Database drivers
-psycopg2-binary>=2.9.0  # PostgreSQL for Neon.com
+# PostgreSQL driver for NeonDB
+psycopg2-binary>=2.9.0
 
-# NumPy for LED pixel driver (SPI)
-numpy>=1.24.0
+# Optional — if Flask app doesn’t depend on GPIO on Render
+# gpiozero>=1.6.0
 
+# WSGI server required for Render
+gunicorn
 
+# Only include numpy if your app truly uses it on Render
+# numpy>=1.24.0
+
+# Load .env files
+python-dotenv>=1.0.0
