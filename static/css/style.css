@@ -1,5 +1,5 @@
-/* IoT Smart Robot Car - Cyberpunk Neon Theme */
-@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap");
+/* Apple-like font */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 * {
   margin: 0;
@@ -7,23 +7,34 @@
   box-sizing: border-box;
 }
 
+/* -------------------------------------------------------------------
+   THEME COLORS → Apple-style (mapped to your neon variables)
+------------------------------------------------------------------- */
 :root {
-  --neon-cyan: #00f5ff;
-  --neon-pink: #ff00ff;
-  --neon-green: #39ff14;
-  --neon-orange: #ff6b35;
-  --neon-purple: #bf00ff;
-  --dark-bg: #0a0a0f;
-  --card-bg: rgba(15, 15, 25, 0.9);
-  --card-border: rgba(0, 245, 255, 0.2);
-  --text-primary: #ffffff;
-  --text-secondary: #8892b0;
-  --danger: #ff3860;
-  --success: #00d1b2;
+  /* Apple-inspired primary accents (replacing neon palette) */
+  --neon-cyan: #0a84ff;        /* Apple Blue */
+  --neon-pink: #bf5af2;        /* Apple Purple */
+  --neon-green: #30d158;       /* Apple Green */
+  --neon-orange: #ff9f0a;      /* Apple Orange */
+  --neon-purple: #af52de;      /* Soft secondary purple */
+
+  /* Dark background similar to macOS/iOS dark mode */
+  --dark-bg: #1c1c1e;
+  --card-bg: rgba(36, 36, 38, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+
+  /* Apple text palette */
+  --text-primary: #f5f5f7;
+  --text-secondary: #b0b0b5;
+
+  /* Apple semantic colors */
+  --danger: #ff3b30;
+  --success: #30d158;
 }
 
+/* Global */
 body {
-  font-family: "Rajdhani", sans-serif;
+  font-family: "Inter", sans-serif;
   background: var(--dark-bg);
   color: var(--text-primary);
   min-height: 100vh;
@@ -41,17 +52,17 @@ body::before {
   height: 100%;
   background: radial-gradient(
       ellipse at 20% 80%,
-      rgba(0, 245, 255, 0.1) 0%,
+      rgba(10, 132, 255, 0.08) 0%,
       transparent 50%
     ),
     radial-gradient(
       ellipse at 80% 20%,
-      rgba(255, 0, 255, 0.08) 0%,
+      rgba(191, 90, 242, 0.08) 0%,
       transparent 50%
     ),
     radial-gradient(
       ellipse at 50% 50%,
-      rgba(57, 255, 20, 0.05) 0%,
+      rgba(48, 209, 88, 0.05) 0%,
       transparent 70%
     );
   pointer-events: none;
@@ -67,10 +78,10 @@ body::after {
   width: 100%;
   height: 100%;
   background-image: linear-gradient(
-      rgba(0, 245, 255, 0.03) 1px,
+      rgba(10, 132, 255, 0.03) 1px,
       transparent 1px
     ),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(10, 132, 255, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
   pointer-events: none;
   z-index: -1;
@@ -80,8 +91,8 @@ body::after {
 .navbar {
   background: linear-gradient(
     180deg,
-    rgba(10, 10, 15, 0.98) 0%,
-    rgba(10, 10, 15, 0.9) 100%
+    rgba(28, 28, 30, 0.95) 0%,
+    rgba(28, 28, 30, 0.85) 100%
   );
   padding: 1rem 0;
   border-bottom: 1px solid var(--card-border);
@@ -101,15 +112,15 @@ body::after {
 }
 
 .nav-logo h1 {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 800;
   background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
-  letter-spacing: 2px;
+  text-shadow: 0 0 25px rgba(10, 132, 255, 0.4);
+  letter-spacing: 1px;
 }
 
 .nav-menu {
@@ -119,7 +130,7 @@ body::after {
 }
 
 .nav-link {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
@@ -127,7 +138,6 @@ body::after {
   padding: 0.6rem 1.2rem;
   border-radius: 4px;
   transition: all 0.3s ease;
-  position: relative;
   text-transform: uppercase;
   letter-spacing: 1px;
   border: 1px solid transparent;
@@ -136,9 +146,9 @@ body::after {
 .nav-link:hover {
   color: var(--neon-cyan);
   border-color: var(--neon-cyan);
-  background: rgba(0, 245, 255, 0.1);
-  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3),
-    inset 0 0 20px rgba(0, 245, 255, 0.1);
+  background: rgba(10, 132, 255, 0.12);
+  box-shadow: 0 0 20px rgba(10, 132, 255, 0.25),
+    inset 0 0 20px rgba(10, 132, 255, 0.1);
 }
 
 /* Main Content */
@@ -153,7 +163,7 @@ body::after {
 }
 
 .page-title {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 2rem;
@@ -195,29 +205,25 @@ body::after {
 }
 
 .card:hover {
-  border-color: rgba(0, 245, 255, 0.4);
-  box-shadow: 0 0 30px rgba(0, 245, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.35);
+  box-shadow: 0 0 30px rgba(10, 132, 255, 0.15);
   transform: translateY(-2px);
 }
 
 .card-header {
-  border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 1rem;
   margin-bottom: 1rem;
 }
 
 .card-header h2,
 .card-header h3 {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   color: var(--neon-cyan);
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
-}
-
-.card-body {
-  padding: 0.5rem 0;
 }
 
 /* Dashboard Grid */
@@ -229,7 +235,7 @@ body::after {
 }
 
 .sensor-value {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 3.5rem;
   font-weight: 800;
   text-align: center;
@@ -237,11 +243,11 @@ body::after {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 40px rgba(0, 245, 255, 0.5);
+  text-shadow: 0 0 40px rgba(10, 132, 255, 0.4);
 }
 
 .sensor-unit {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 1rem;
   color: var(--text-secondary);
   text-align: center;
@@ -266,7 +272,7 @@ body::after {
   display: flex;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .status-label {
@@ -275,7 +281,7 @@ body::after {
 }
 
 .status-value {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
 }
 
@@ -291,12 +297,12 @@ body::after {
 
 /* Buttons */
 .btn {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   padding: 0.8rem 1.8rem;
   border: 2px solid transparent;
   border-radius: 6px;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
@@ -337,7 +343,7 @@ body::after {
 .btn-primary:hover {
   background: var(--neon-cyan);
   color: var(--dark-bg);
-  box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+  box-shadow: 0 0 30px rgba(10, 132, 255, 0.35);
 }
 
 .btn-secondary {
@@ -349,7 +355,7 @@ body::after {
 .btn-secondary:hover {
   background: var(--neon-pink);
   color: var(--dark-bg);
-  box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+  box-shadow: 0 0 30px rgba(191, 90, 242, 0.4);
 }
 
 .btn-success {
@@ -361,7 +367,7 @@ body::after {
 .btn-success:hover {
   background: var(--neon-green);
   color: var(--dark-bg);
-  box-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
+  box-shadow: 0 0 30px rgba(48, 209, 88, 0.5);
 }
 
 .btn-danger {
@@ -373,7 +379,7 @@ body::after {
 .btn-danger:hover {
   background: var(--danger);
   color: white;
-  box-shadow: 0 0 30px rgba(255, 56, 96, 0.5);
+  box-shadow: 0 0 30px rgba(255, 59, 48, 0.5);
 }
 
 .btn-warning {
@@ -385,7 +391,7 @@ body::after {
 .btn-warning:hover {
   background: var(--neon-orange);
   color: var(--dark-bg);
-  box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+  box-shadow: 0 0 30px rgba(255, 159, 10, 0.5);
 }
 
 .btn-large {
@@ -398,13 +404,13 @@ body::after {
   cursor: not-allowed;
 }
 
-/* Quick Actions */
+/* QUICK ACTIONS */
 .quick-actions {
   margin-top: 3rem;
 }
 
 .quick-actions h2 {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   margin-bottom: 1.5rem;
   color: var(--text-primary);
   font-size: 1.3rem;
@@ -479,7 +485,7 @@ body::after {
 }
 
 .device-item h3 {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   margin-bottom: 1rem;
   color: var(--neon-cyan);
   text-transform: uppercase;
@@ -514,15 +520,15 @@ body::after {
 }
 
 .date-selector label {
-  font-family: "Orbitron", monospace;
-  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
   color: var(--neon-cyan);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .date-selector input[type="date"] {
-  font-family: "Rajdhani", sans-serif;
+  font-family: "Inter", sans-serif;
   padding: 0.7rem 1rem;
   border-radius: 6px;
   border: 2px solid var(--card-border);
@@ -535,7 +541,7 @@ body::after {
 .date-selector input[type="date"]:focus {
   border-color: var(--neon-cyan);
   outline: none;
-  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+  box-shadow: 0 0 20px rgba(10, 132, 255, 0.3);
 }
 
 /* Algorithm Controls */
@@ -581,7 +587,7 @@ body::after {
 
 /* Line State Display */
 .line-state-display {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 5rem;
   text-align: center;
   font-weight: 800;
@@ -600,7 +606,7 @@ body::after {
 
 /* Distance Display */
 .distance-display {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 6rem;
   text-align: center;
   font-weight: 800;
@@ -612,7 +618,7 @@ body::after {
 }
 
 .distance-unit {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   text-align: center;
   font-size: 1.5rem;
   color: var(--text-secondary);
@@ -634,8 +640,8 @@ body::after {
   right: 2rem;
   padding: 1rem 2rem;
   border-radius: 8px;
-  font-family: "Orbitron", monospace;
-  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
   z-index: 1000;
   transition: all 0.3s;
   opacity: 0;
@@ -697,7 +703,7 @@ body::after {
 
 /* Footer */
 .footer {
-  background: rgba(10, 10, 15, 0.95);
+  background: rgba(28, 28, 30, 0.95);
   text-align: center;
   padding: 2rem;
   margin-top: 4rem;
@@ -705,7 +711,7 @@ body::after {
 }
 
 .footer p {
-  font-family: "Orbitron", monospace;
+  font-family: "Inter", sans-serif;
   color: var(--text-secondary);
   font-size: 0.85rem;
   letter-spacing: 2px;
