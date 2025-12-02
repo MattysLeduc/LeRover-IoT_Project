@@ -1,47 +1,278 @@
-# LeRover-IoT_Project By Mattys Leduc
+# LeRover IoT Project
 
-Video Link: https://youtu.be/JRt6aQd1DLU
+IoT Smart Mobile Robot (Raspberry Pi) — full connected system with **telemetry**, **cloud sync**, and a **Flask web interface** for remote control and monitoring.
 
-<img width="1919" height="1086" alt="image" src="https://github.com/user-attachments/assets/1cb73b91-dad1-4e82-8761-72046cdf8815" />
-
-# Reflection
-Working on this project allowed me to combine several technical components such as motors, sensors, camera, and MQTT — into one functional system. The integration between the ultrasonic sensor, camera, and buzzer worked particularly well, creating a responsive autonomous mode that reacted accurately to nearby objects. Configuring MQTT and Adafruit IO also proved effective for remote monitoring and data visualization.
-
-The hardest part was troubleshooting hardware conflicts between GPIO pins and ensuring the Picamera2 preview worked properly on different Raspberry Pi environments. Getting the timing right for the ultrasonic sensor and synchronizing it with the buzzer and camera capture also required careful calibration.
-
-To improve this project, I would implement better error handling, add real-time telemetry visualization, and refine the line-following algorithm for smoother turns. Integrating machine learning for object detection could also make the system more intelligent and adaptable in future iterations.
-
-
-**Technologies:** Raspberry Pi | Python | MQTT | Adafruit IO | Camera | Infrared Line Tracking  
-
-This project transforms the **Freenove 4WD Smart Car Kit for Raspberry Pi** into a **fully autonomous, IoT-enabled robot**.  
-It combines ultrasonic obstacle detection, camera capture, servo control, and infrared-based line following.
+> **Complete modular architecture:** hardware drivers, messaging interface, Flask server, Adafruit IO feeds, and NeonDB database integration.
 
 ---
 
-## Features
+# Milestone 3 – Submission Information
 
-- **Manual Motor Control** – Move forward, backward, left, right, or stop.
-- **Ultrasonic Distance Sensing** – Measure distance from obstacles in centimeters.
-- **Buzzer Alerts** – Triggered when obstacles are detected.
-- **Servo Control** – Adjusts camera or ultrasonic angles.
-- **Live Camera Preview (QTGL)** – Real-time video using Picamera2.
-- **Autonomous Security Mode** – Detects obstacles, captures images, and sends MQTT data.
-- **Infrared Sensor Test** – Displays LEFT, RIGHT, or CENTER readings.
-- **Line-Following Mode** – Follows a black line automatically.
-- **Adafruit IO Integration** – Publishes sensor readings and image data to the cloud.
+### Team Members
+- **Mattys Leduc** (ID: 2331106) — Everything
+
+### Course Info
+- **Course:** 420-N55 — IoT: Design & Prototyping of Connected Devices  
+- **Institution:** Champlain College Saint-Lambert  
+- **Professor:** Haikel Hichri  
+- **Semester:** Fall 2025  
+
+### Useful Links
+
+| Resource | Link                                        |
+|---------|---------------------------------------------|
+| Adafruit IO Dashboard | https://io.adafruit.com/mat_led/dashboards  |
+| NeonDB Console        | https://console.neon.tech                   |
+| Flask Web App (Render) | https://lerover-iot-project.onrender.com         |
+| Video Demo |  |
 
 ---
 
-## System Overview
+# 📦 Requirements & Installation
+
+## Hardware
+- Raspberry Pi 4B / 5  
+- Freenove 4WD Robot Car (or equivalent)  
+- Ultrasonic HC-SR04  
+- IR line sensors (3-channel)  
+- Servos (pan/tilt)  
+- LED WS281X (optional)  
+- Buzzer (optional)  
+
+## Software
+- Raspberry Pi OS 64-bit  
+- Python 3.9+  
+- Git  
+
+---
+
+# 🚀 Quick Start – Raspberry Pi Setup
+
+## 1. Install System Dependencies
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3-venv python3-pip python3-smbus python3-spidev python3-rpi.gpio git
+```
+
+Enable **SPI**, **I2C**, and **Camera**:
+
+```bash
+sudo raspi-config
+```
+
+---
+
+## 2. Clone the Repository
+
+```bash
+cd ~
+git clone https://github.com/MattysLeduc/LeRover-IoT_Project
+cd LeRover-IoT_Project
+```
+
+---
+
+## 3. Create Virtual Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+If needed:
+
+```bash
+pip install smbus smbus2 spidev RPi.GPIO numpy
+```
+
+---
+
+## 4. Configure Adafruit IO
+
+```bash
+cp adafruit.sample.json adafruit.json
+nano adafruit.json
+```
+
+Example config:
+
+```json
+{
+  "adafruit": {
+    "username": "YOUR_USERNAME",
+    "key": "YOUR_KEY",
+    "feeds": {
+      "ultrasonic": "ultrasonic-feed",
+      "camera": "camera-status",
+      "motor": "motor-control",
+      "buzzer": "buzzer-control",
+      "led": "led-control",
+      "line_tracking": "line-tracking",
+      "obstacle_avoidance": "obstacle-avoidance"
+    }
+  }
+}
+```
+
+---
+
+## 5. Set Database URL (Optional)
+
+```bash
+export DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
+```
+
+---
+
+# 🎮 Running the System
+
+### ✔ Flask Server  
+```bash
+python app.py
+```
+
+Runs on:
 
 ```
- Raspberry Pi
- ├── Ultrasonic Sensor
- ├── Infrared Sensor Array
- ├── Buzzer + Servos
- ├── 4WD Motor Control
- └── Picamera2 Module
+http://localhost:5000
 ```
 
 ---
+
+### ✔ MQTT Command Receiver  
+```bash
+python server/server.py
+```
+
+---
+
+### ✔ Telemetry Processor  
+```bash
+cd telemetry
+python telemetry_runner.py
+```
+
+---
+
+### ✔ Manual Car Control  
+```bash
+python car.py
+```
+
+---
+
+# 📋 Python Dependencies (requirements.txt)
+
+```
+paho-mqtt>=1.6,<3.0
+python-dateutil>=2.8.0
+gpiozero>=1.6.0
+Flask>=3.0.0
+requests>=2.31.0
+psycopg2-binary>=2.9.0
+numpy>=1.24.0
+```
+
+---
+
+# 🌐 Flask Web Application
+
+Features:
+- Live sensor dashboard  
+- Camera snapshot  
+- Motor control  
+- LED & buzzer control  
+- Line tracking + obstacle avoidance  
+- Database telemetry viewer  
+
+Run locally:
+
+```bash
+python app.py
+```
+
+---
+
+# 📡 Adafruit IO Feed Structure
+
+### Sensor → Cloud
+| Feed | Purpose |
+|------|---------|
+| ultrasonic-feed | Ultrasonic cm values |
+| camera-status   | Upload latest image |
+| line-tracking   | Boolean |
+| obstacle-avoidance | Boolean |
+
+### Cloud → Robot
+| Feed | Command |
+|------|---------|
+| motor-control | forward/backward/left/right/stop |
+| buzzer-control | on/off |
+| led-control | on/off |
+
+---
+
+# 🗄️ Database Schema (NeonDB)
+
+```sql
+CREATE TABLE sensor_data (
+    id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMP DEFAULT NOW(),
+    ultrasonic REAL,
+    ir_left INT,
+    ir_center INT,
+    ir_right INT,
+    mode TEXT
+);
+```
+
+---
+
+# 📁 Repository Structure
+
+```
+LeRover-IoT_Project/
+│── app.py
+│── car.py
+│── command/
+│── hardware/
+│── server/
+│── telemetry/
+│── templates/
+│── static/
+│── requirements.txt
+│── adafruit.sample.json
+└── db/
+```
+
+---
+
+# 🔧 Troubleshooting
+
+### GPIO Busy
+```bash
+sudo pkill -9 python3
+python3 - << 'EOF'
+import RPi.GPIO as GPIO
+GPIO.cleanup()
+EOF
+```
+
+### Missing Modules
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+---
+
+# 🎥 Video Demonstration  
+
+
+---
+
+# 📜 License  
+Educational project for Champlain College Saint-Lambert.
